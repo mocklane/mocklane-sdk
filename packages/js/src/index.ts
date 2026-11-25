@@ -1,7 +1,7 @@
 export type {
   DeviceMetadata,
   MocklaneConfig,
-  MocklaneStartOptions,
+  MocklaneInstallOptions,
 } from './config.js';
 export { resolveConfig, DEFAULT_GATEWAY_PORT, DEFAULT_GATEWAY_HOST } from './config.js';
 export { rewriteToGateway, isGatewayUrl } from './rewrite.js';

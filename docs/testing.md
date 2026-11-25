@@ -2,7 +2,7 @@
 
 ## Unit tests
 
-Run from the repository root.
+The commands below run from the repository root.
 
 ```bash
 pnpm install
@@ -25,10 +25,7 @@ cd packages/kotlin
 swift test        # from the repo root, using the root SPM manifest
 ```
 
-The rewrite tests in JS, Dart, and Kotlin run the shared cases in
-[`fixtures/url-rewrite.json`](../fixtures/url-rewrite.json). Swift uses an
-identical copy under `packages/swift/Tests/MocklaneTests/Resources/` because SPM
-cannot reference files outside the package.
+The rewrite tests in JS, Dart, and Kotlin run the shared cases in [`fixtures/url-rewrite.json`](../fixtures/url-rewrite.json). Swift uses an identical copy under `packages/swift/Tests/MocklaneTests/Resources/` because SPM cannot reference files outside the package.
 
 ## CI
 
@@ -36,20 +33,16 @@ cannot reference files outside the package.
 |--------|------|
 | GitHub Actions (`.github/workflows/ci.yml`) | `js`, `dart`, `kotlin`, `swift`, `samples-generated` |
 
-`samples-generated` runs `pnpm generate:samples` and fails if the generated
-files differ from what is committed. Edit `samples/scenarios.json`, then
-regenerate.
+`samples-generated` runs `pnpm generate:samples` and fails if the generated files differ from what is committed. If you edit `samples/scenarios.json`, regenerate with `pnpm generate:samples`.
 
-## End-to-end: web demo ↔ Desktop
+## End-to-end: web demo ↔ Mocklane app
 
-Automates the web sample's **Run all** and verifies the captures with
-`mocklane traffic`.
+Automates the web sample's **Run all** and verifies the captures with `mocklane traffic`.
 
 ### Goal
 
 1. Browser loads `samples/web`.
-2. **Run all** executes `S01`–`S12` and `L01`–`L02` from
-   [`samples/scenarios.json`](../samples/scenarios.json).
+2. **Run all** executes `S01`–`S12` and `L01`–`L02` from [`samples/scenarios.json`](../samples/scenarios.json).
 3. `mocklane traffic list --json` shows:
    - twelve `FORWARD` rows (GET/POST/PUT/PATCH/DELETE, JSON, form, headers,
      binary, delay, 404);
@@ -63,7 +56,7 @@ Automates the web sample's **Run all** and verifies the captures with
 
 | Piece | How |
 |-------|-----|
-| Gateway + control plane | Mocklane Desktop (**Listening :6625**) or `mocklane serve` |
+| Gateway + control plane | Mocklane app (**Listening :6625**) or `mocklane serve` |
 | Ports | Gateway `6625`, control `16625` |
 | Internet | `postman-echo.com`, `jsonplaceholder.typicode.com` reachable |
 | CLI | the `mocklane` binary, or `MOCKLANE_BIN=/path/to/mocklane` |
@@ -79,7 +72,7 @@ mocklane status --json
 ### Automated run
 
 ```bash
-# Terminal A — Mocklane Desktop, or:
+# Terminal A — Mocklane app, or:
 mocklane serve
 
 # Terminal B — web demo
@@ -96,11 +89,11 @@ Exit code `0` = pass. Exit code `1` = fail with the reason.
 
 | Check | Pass | Fail → look at |
 |-------|------|----------------|
-| `status.listening` | true | Start Desktop / `mocklane serve` |
+| `status.listening` | true | Start the Mocklane app / `mocklane serve` |
 | FORWARD S01–S12 | each method + path suffix present | Internet; fail-open; sample UI |
-| SDK_LOG L01–L02 | ≥2 SDK_LOG rows | Desktop without log ingest |
+| SDK_LOG L01–L02 | ≥2 SDK_LOG rows | The Mocklane app without log ingest |
 | `source_label` | `web-demo` on forward | Device metadata in the sample bootstrap |
-| No probe ERROR on `/` | zero `ORIGIN_MISSING` on `/` | Restart Desktop; health path |
+| No probe ERROR on `/` | zero `ORIGIN_MISSING` on `/` | Restart the Mocklane app; health path |
 
 ### Manual fallback (no Playwright)
 

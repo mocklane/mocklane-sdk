@@ -4,7 +4,8 @@ import 'package:mocklane/mocklane.dart';
 ///
 ///     dart run example/main.dart
 void main() {
-  Mocklane.start(
+  Mocklane.install(
+    enabled: true,
     device: const DeviceMetadata(deviceName: 'dart-example'),
   );
 
@@ -18,5 +19,5 @@ void main() {
 
   Mocklane.log('example started', tag: 'example');
 
-  Mocklane.stop();
+  Mocklane.uninstall();
 }

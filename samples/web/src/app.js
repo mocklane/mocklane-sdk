@@ -93,7 +93,7 @@ runAllBtn.addEventListener('click', async () => {
 clearBtn.addEventListener('click', () => say('Ready.'));
 
 if (!isMocklaneEnabled()) {
-  say('Production build — Mocklane.start() skipped. API calls use fail-open direct fetch.');
+  say('Production build — Mocklane.install() skipped. API calls use fail-open direct fetch.');
 }
 
 renderList();

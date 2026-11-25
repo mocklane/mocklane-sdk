@@ -38,7 +38,10 @@ import kotlinx.coroutines.withContext
  */
 public val MocklaneKtor: ClientPlugin<MocklaneKtorConfig> =
     createClientPlugin("MocklaneKtor", ::MocklaneKtorConfig) {
-        val resolved = Mocklane.bind(pluginConfig.config)
+        val configured =
+            pluginConfig.config
+                ?: error("MocklaneKtor requires config = MocklaneConfig(enabled = ...)")
+        val resolved = Mocklane.bind(configured)
         val probe: GatewayProbe = HttpGatewayProbe(resolved)
 
         onRequest { request, content ->

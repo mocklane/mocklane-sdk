@@ -1,33 +1,33 @@
 # mocklane (Kotlin)
 
-Debug-only HTTP interception for Android / JVM. Same gateway contract as
-JS/Dart/Swift:
+The Kotlin SDK works with the Mocklane app to capture your app's HTTP traffic in debug builds. It attaches to the HTTP client you already use and sends absolute `http(s)` requests through the Mocklane app. Every request and response appears in its Traffic view, where you can inspect, mock, rewrite, and debug them.
 
-`https://api.example.com/v1/x` → `http://127.0.0.1:6625/https://api.example.com/v1/x`
+```mermaid
+flowchart LR
+  app[Your app] <--> sdk[Mocklane SDK]
+  sdk <-->|local| ml[Mocklane app]
+  ml <-->|HTTPS| api[Real API]
+  app <-->|disabled or unreachable| api
+```
 
-Fail-open if Desktop is down. Gate with `BuildConfig.DEBUG` in the host app.
+If the Mocklane app is not reachable, requests fail open to their original URL. The host app turns interception on with `BuildConfig.DEBUG`.
+
+Requirements: JDK 17. The SDK does not use `java.time`, so it does not require a higher `minSdk` or core-library desugaring.
 
 ## Modules
 
-One shared core, one thin adapter per HTTP client. Add only the artifact for the
-client you use:
+One adapter per HTTP client. Add only the artifact for the client you use:
 
 | Module | Public entry point | Use when |
 |--------|--------------------|----------|
-| `mocklane-core` | `MocklaneConfig`, `DeviceMetadata`, `Mocklane.log`, `Mocklane.rewrite` | Shared by adapters; not added directly by apps |
-| `mocklane-okhttp` | `MocklaneOkHttp.interceptor(...)` | OkHttp / Retrofit |
+| `mocklane-okhttp` | `MocklaneOkHttp.install(...)` | OkHttp / Retrofit |
 | `mocklane-ktor` | `MocklaneKtor` | Ktor client (any engine) |
 
-All adapters share the same config, runtime, log, device labels, and rewrite
-rules. Adding another client later means adding one adapter artifact, not
-forking the SDK. If an app uses both OkHttp and Ktor, include `mocklane-core`
-once and both adapter modules.
+All adapters share the same config, log runtime, device labels, and rewrite rules. An app that uses both OkHttp and Ktor adds both adapter artifacts.
 
-Adapters only rewrite the URL and add device headers; request and response
-bodies are passed through untouched, so streaming and large uploads behave the
-same as they do without Mocklane.
+Adapters rewrite the URL and add device headers only. Request and response bodies are passed through untouched, so streaming and large uploads behave as they do without Mocklane.
 
-## Install (Maven Central)
+## Install
 
 ```kotlin
 // app/build.gradle.kts — OkHttp / Retrofit apps
@@ -37,72 +37,56 @@ debugImplementation("io.github.mocklane:mocklane-okhttp:0.1.1")
 debugImplementation("io.github.mocklane:mocklane-ktor:0.1.1")
 ```
 
-One adapter line is enough — `mocklane-core` comes along transitively.
-Standard `mavenCentral()` repository; no extra repository URL or
-authentication is needed.
+One adapter line is enough. The artifacts are published on Maven Central, so you need no extra repository or authentication.
 
-## Gradle path dependency
+Full setup, Android cleartext configuration, and device connectivity: [`docs/integration/kotlin.md`](../../docs/integration/kotlin.md).
 
-```kotlin
-// settings.gradle.kts
-include(":mocklane-core", ":mocklane-okhttp")
-project(":mocklane-core").projectDir = file("/path/to/sdk/packages/kotlin/mocklane-core")
-project(":mocklane-okhttp").projectDir = file("/path/to/sdk/packages/kotlin/mocklane-okhttp")
+## OkHttp / Retrofit
 
-// app/build.gradle.kts
-implementation(project(":mocklane-okhttp"))
-```
-
-## OkHttp
-
-Interception is opt-in: `interceptor` requires an explicit `enabled` flag.
-Add it **last** in the application interceptor chain, after auth/header
-interceptors:
+`MocklaneOkHttp.install` returns a new client built from the one you pass in. Use the returned client for every API call:
 
 ```kotlin
-val client = OkHttpClient.Builder()
+// `builder` holds your existing OkHttp configuration.
+val existingClient = OkHttpClient.Builder()
   .addInterceptor(authInterceptor)
-  .addInterceptor(MocklaneOkHttp.interceptor(enabled = BuildConfig.DEBUG)) // last
+  .cookieJar(myCookieJar)
   .build()
+
+val client = MocklaneOkHttp.install(existingClient, enabled = BuildConfig.DEBUG)
 ```
 
-For per-client settings, pass a `MocklaneConfig`:
+The client needs its interceptors, cache, and `CookieJar` configured before you call `install`. A `MocklaneConfig` sets per-client options:
 
 ```kotlin
-val client = OkHttpClient.Builder()
-  .addInterceptor(
-    MocklaneOkHttp.interceptor(
-      MocklaneConfig(
-        enabled = BuildConfig.DEBUG,
-        failOpen = false,
-        device = DeviceMetadata(deviceName = "my-app"),
-      ),
-    ),
-  ) // last
-  .build()
+val client = MocklaneOkHttp.install(
+  existingClient,
+  MocklaneConfig(
+    port = 7000,
+    enabled = BuildConfig.DEBUG,
+    failOpen = false,
+    device = DeviceMetadata(deviceName = "my-app"),
+  ),
+)
 ```
+
+### What the adapter adds
+
+- An **application interceptor** that rewrites absolute `http(s)` requests to the gateway URL and adds device labels. OkHttp selects the connection above a network interceptor, so the rewrite must be an application interceptor. It is appended after the client's existing interceptors, so auth and header interceptors you added earlier still run first.
+- A **network interceptor** that keeps the client's `CookieJar` keyed to the embedded origin: `Set-Cookie` is parsed against the real origin, saved there, and stripped before OkHttp's own cookie handling sees the gateway URL.
+
+The jar is captured at install time; a later `client.newBuilder().cookieJar(...)` is not scoped by Mocklane. Calling `install` twice on the same client keeps the first install.
+
+The Mocklane app rewrites same-origin redirects to gateway-prefixed URLs, whether `Location` is absolute or relative. The hop stays captured and keeps `Authorization` and `Cookie` headers. If the client has an OkHttp `Cache`, responses are cached under the gateway URL (`http://127.0.0.1:6625/<origin>/<path>`) rather than the original URL; disable the cache while capturing if cache hits hide the traffic you expect.
 
 ## Ktor
 
-Use `mocklane-ktor` instead of `mocklane-okhttp`. The plugin is engine-agnostic
-(CIO, OkHttp, Android, Darwin, MockEngine). Add the Ktor engine your app already
-uses (`ktor-client-okhttp`, `ktor-client-android`, `ktor-client-darwin`,
-`ktor-client-cio`):
-
-```kotlin
-// settings.gradle.kts
-include(":mocklane-core", ":mocklane-ktor")
-project(":mocklane-core").projectDir = file("/path/to/sdk/packages/kotlin/mocklane-core")
-project(":mocklane-ktor").projectDir = file("/path/to/sdk/packages/kotlin/mocklane-ktor")
-
-// app/build.gradle.kts
-implementation(project(":mocklane-ktor"))
-```
+A Ktor app uses `mocklane-ktor` instead of `mocklane-okhttp`. The plugin is engine-agnostic (CIO, OkHttp, Android, Darwin, `MockEngine`), and the app adds the Ktor engine it already uses:
 
 ```kotlin
 val client = HttpClient {
   install(MocklaneKtor) {
     config = MocklaneConfig(
+      port = 7000, // or host = "192.168.1.10"
       enabled = BuildConfig.DEBUG,
       device = DeviceMetadata(deviceName = "my-app"),
     )
@@ -110,60 +94,40 @@ val client = HttpClient {
 }
 ```
 
-The plugin runs before the engine sends the request, so it sees the final URL,
-query, and body content type. WebSocket handshakes and gRPC bodies are skipped.
-Install it after other plugins that set request headers (for example
-`WebSockets`) so those headers are visible.
+The plugin runs before the engine sends the request, so it sees the final URL, query, and body content type. WebSocket handshakes and gRPC bodies are skipped. The plugin must be installed after plugins that set request headers (for example `WebSockets`) so those headers are visible.
 
-## `MocklaneConfig`
+There is no cookie hook in a Ktor client plugin. `HttpCookies` keys cookies by the request URL, which is the gateway URL once the plugin has rewritten it, so cookies set through the gateway may be stored under `127.0.0.1:6625` and not shared with clients that skip Mocklane. Prefer `MocklaneOkHttp.install` for cookie-bound auth, or use a cookie manager that keys to the original URL.
+
+## Configuration
 
 | Field | Default | Meaning |
 |-------|---------|---------|
 | `host` | `127.0.0.1` | Gateway host |
 | `port` | `6625` | Gateway port |
 | `failOpen` | `true` | Unreachable gateway → original request; `false` → throw |
-| `probeTimeoutMs` | `150` | Fast reachability-probe timeout |
-| `device` | platform default | Labels in Desktop Traffic |
-| `enabled` | `false` | Opt-in; `true` → intercept, `false` → pass-through |
+| `probeTimeoutMs` | `150` | Reachability-probe timeout |
+| `device` | platform default | Device labels in Traffic |
+| `enabled` | — (required) | Pass your build flag; `true` → intercept, `false` → pass-through |
 
-A disabled adapter stays installed but is a pass-through, so a release build
-cannot accidentally enable capture.
+A disabled adapter stays installed but is a pass-through. Capture requires an explicit `enabled = true`, so a release build cannot turn it on by omission. Invalid values are rejected by the `MocklaneConfig` constructor with an `IllegalArgumentException`.
 
-`Mocklane.log()` uses the config of the most recently created **enabled**
-adapter. Creating a disabled adapter does not clear it, so one enabled client
-keeps logging while other clients stay pass-through. With no enabled adapter,
-logging is a no-op. Use the same config for all clients to keep gateway and
-device labels consistent.
+`Mocklane.log()` uses the config of the most recently created **enabled** adapter. Creating a disabled adapter does not clear it, so one enabled client keeps logging while other clients stay pass-through; with no enabled adapter, logging is a no-op. Using the same config for all clients keeps gateway and device labels consistent.
 
-Desktop defaults to `127.0.0.1:6625`. With `adb reverse`, that address works for
-both the emulator and a physical device; **Connect Android** sets the reverse
-for you. On Android 9+, the host app needs a network-security exception for
-cleartext loopback — the exact `network_security_config.xml` is in
-[`docs/integration/kotlin.md`](../../docs/integration/kotlin.md).
+The Mocklane app defaults to `127.0.0.1:6625`. With `adb reverse`, that address works for both the emulator and a physical device, and **Connect Android** sets the reverse for you. On Android 9 and later the host app needs a network-security exception for cleartext loopback; see [`docs/integration/kotlin.md`](../../docs/integration/kotlin.md).
 
-WebSocket handshakes and gRPC calls are passed through untouched until Desktop
-supports them; ordinary HTTP traffic is unaffected.
+WebSocket handshakes and gRPC calls pass through untouched until the Mocklane app supports them; ordinary HTTP traffic is unaffected.
 
-Optional structured log:
+## Logging
 
 ```kotlin
 Mocklane.log("loaded profile", tag = "home")
 ```
 
-Messages are sent as-is. The JS, Dart, and Swift SDKs redact JSON log fields
-(`password`, `token`, `access_token`, …), but the Kotlin/JVM SDK has no built-in
-JSON parser and does not add a dependency for this, so mask secrets before
-logging:
-
-```kotlin
-Mocklane.log(redactSecrets(payload))
-```
+Messages are sent as-is. The Kotlin/JVM SDK has no built-in JSON parser and does not add one, so mask secrets in your own code before logging. Request and response bodies are never redacted.
 
 ## Custom adapters
 
-For a client without an official adapter, depend on `mocklane-core` and keep
-the adapter thin. The shared pieces are available under `MocklaneInternalApi`
-(opt in with `@OptIn(MocklaneInternalApi::class)`):
+If a client has no official adapter, the app can depend on `mocklane-core` and keep the adapter thin. The shared pieces are available under `MocklaneInternalApi` (opt in with `@OptIn(MocklaneInternalApi::class)`):
 
 ```kotlin
 @OptIn(MocklaneInternalApi::class)
@@ -185,44 +149,30 @@ class MyClientMocklane(config: MocklaneConfig) {
 }
 ```
 
-Use `DeviceHeaders.values(resolved.device)` to attach the same labels, and call
-`Mocklane.log` for structured logs. The shared URL-rewrite cases live in
-[`../../fixtures/url-rewrite.json`](../../fixtures/url-rewrite.json).
+`DeviceHeaders.values(resolved.device)` attaches the same labels, and the adapter calls `Mocklane.log` for structured logs. The shared URL-rewrite cases live in [`../../fixtures/url-rewrite.json`](../../fixtures/url-rewrite.json).
 
-## Sample apps
+## Development
 
-See [`../../samples/`](../../samples/) — Android / Flutter / Web demos with path
-dependencies (no Maven publish required).
+In a local checkout, you can point the app at the package directories instead of Maven Central:
 
-## Packages
+```kotlin
+// settings.gradle.kts
+include(":mocklane-core", ":mocklane-okhttp")
+project(":mocklane-core").projectDir = file("/path/to/sdk/packages/kotlin/mocklane-core")
+project(":mocklane-okhttp").projectDir = file("/path/to/sdk/packages/kotlin/mocklane-okhttp")
 
-Public API lives in `io.mocklane.sdk`; OkHttp adapter internals live in
-`io.mocklane.sdk.internal`; Ktor adapter in `io.mocklane.sdk.ktor`.
+// app/build.gradle.kts
+implementation(project(":mocklane-okhttp"))
+```
 
-| Type | Responsibility |
-|------|----------------|
-| `Mocklane` | Shared facade: `log()` + `rewrite()` |
-| `MocklaneConfig` | Public runtime options |
-| `DeviceMetadata` | Public device labels |
-| `LogLevel` | Public log level enum |
-| `MocklaneOkHttp` | OkHttp adapter facade |
-| `MocklaneKtor` / `MocklaneKtorConfig` | Ktor plugin |
-| `Rewrite` | Origin-prefixed gateway URL (adapter internal API) |
-| `GatewayProbe` / `HttpGatewayProbe` | Reachability probe (adapter internal API) |
-| `UnsupportedProtocols` / `DeviceHeaders` | Shared adapter helpers |
-
-Only `Mocklane`, `MocklaneConfig`, `DeviceMetadata`, `LogLevel`,
-`MocklaneOkHttp`, and `MocklaneKtor` are intended for app code.
-
-## Test
+A Ktor app uses `mocklane-ktor` in place of `mocklane-okhttp`. Runnable samples live in [`../../samples/`](../../samples/). The test suites run from the package root:
 
 ```bash
 cd packages/kotlin
 ./gradlew test
 ```
 
-Runs core rewrite/config tests, OkHttp MockWebServer tests, and Ktor MockEngine
-tests.
+This runs the core rewrite/config tests, the OkHttp MockWebServer tests, and the Ktor MockEngine tests.
 
 ## License
 

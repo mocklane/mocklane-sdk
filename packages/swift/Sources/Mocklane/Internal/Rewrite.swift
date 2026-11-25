@@ -1,6 +1,6 @@
 import Foundation
 
-/// URL rewrite (SRP) — matches Desktop origin-prefixed gateway form.
+/// URL rewrite — matches Desktop's origin-prefixed gateway form.
 enum MocklaneRewrite {
     static func rewriteToGateway(
         _ input: String,
@@ -53,6 +53,36 @@ enum MocklaneRewrite {
         } else {
             return false
         }
-        return urlHost == host && urlPort == port
+        return normalizedHost(urlHost) == normalizedHost(host) && urlPort == port
+    }
+
+    /// Unwrap a gateway-prefixed URL back to the embedded origin.
+    ///
+    /// Returns `nil` for anything that is not `http://host:port/<absolute URL>`,
+    /// including relative `Location` values. Used when following redirects:
+    /// Desktop rewrites same-origin `Location` values to the gateway form, and
+    /// same-origin detection has to see the real origin to keep
+    /// `Authorization`/`Cookie` on the hop.
+    static func originalURL(
+        from input: String,
+        host: String = MocklaneConfig.defaultHost,
+        port: Int = MocklaneConfig.defaultPort
+    ) -> String? {
+        let prefix = "http://\(host):\(port)/"
+        guard input.count > prefix.count,
+              input.lowercased().hasPrefix(prefix.lowercased())
+        else { return nil }
+        let embedded = String(input.dropFirst(prefix.count))
+        guard let url = URL(string: embedded),
+              let scheme = url.scheme?.lowercased(),
+              scheme == "http" || scheme == "https",
+              url.host != nil
+        else { return nil }
+        return embedded
+    }
+
+    /// `URL.host` drops IPv6 brackets; config hosts may keep them.
+    private static func normalizedHost(_ host: String) -> String {
+        host.trimmingCharacters(in: CharacterSet(charactersIn: "[]")).lowercased()
     }
 }

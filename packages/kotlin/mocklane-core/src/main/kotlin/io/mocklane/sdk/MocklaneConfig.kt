@@ -8,7 +8,7 @@ const val DEFAULT_PROBE_TIMEOUT_MS = 150L
  * SDK configuration.
  *
  * Pass an instance to the client adapter (for example
- * `MocklaneOkHttp.interceptor` or `MocklaneKtor`). Interception is opt-in; set
+ * `MocklaneOkHttp.install` or `MocklaneKtor`). Interception is opt-in; set
  * [enabled] from your build flag.
  */
 data class MocklaneConfig(
@@ -27,11 +27,11 @@ data class MocklaneConfig(
      */
     val device: DeviceMetadata? = null,
     /**
-     * Enables interception. Defaults to `false`; set it from your build flag.
-     * A disabled adapter is a pass-through. It does not clear the runtime of an
-     * already enabled adapter, so multiple clients can share one log config.
+     * Enables interception. Required; set it from your build flag. A disabled
+     * adapter is a pass-through. It does not clear the runtime of an already
+     * enabled adapter, so multiple clients can share one log config.
      */
-    val enabled: Boolean = false,
+    val enabled: Boolean,
 ) {
     init {
         require(host.isNotBlank()) { "host must not be blank" }

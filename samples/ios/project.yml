@@ -31,7 +31,7 @@ targets:
       PRODUCT_BUNDLE_IDENTIFIER: io.mocklane.sample.ios
       PRODUCT_NAME: MocklaneIOSSample
       CURRENT_PROJECT_VERSION: 1
-      MARKETING_VERSION: "0.1.0"
+      MARKETING_VERSION: "0.1.1"
     dependencies:
       - package: Mocklane
         product: Mocklane

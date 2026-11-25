@@ -69,5 +69,13 @@
     "gatewayHost": "127.0.0.1",
     "port": 6625,
     "expected": "http://127.0.0.1:6625/https://api.example.com//double"
+  },
+  {
+    "id": "R11",
+    "input": "http://[::1]:8080/v1/me",
+    "gatewayHost": "127.0.0.1",
+    "port": 6625,
+    "expected": "http://127.0.0.1:6625/http://[::1]:8080/v1/me",
+    "notes": "IPv6 hosts keep their brackets"
   }
 ]

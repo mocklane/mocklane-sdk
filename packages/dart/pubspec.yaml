@@ -1,5 +1,5 @@
 name: mocklane
-description: Debug-only HTTP interceptor that routes traffic through Mocklane Desktop (:6625).
+description: Debug-only HTTP interceptor that routes traffic through the Mocklane app (:6625).
 version: 0.1.1
 homepage: https://github.com/mocklane/mocklane-sdk
 repository: https://github.com/mocklane/mocklane-sdk

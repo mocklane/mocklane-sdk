@@ -49,7 +49,7 @@ public object Mocklane {
      * created enabled adapter, otherwise the default gateway settings.
      */
     public fun rewrite(url: String, config: MocklaneConfig? = null): String {
-        val resolved = config ?: runtime?.config ?: MocklaneConfig()
+        val resolved = config ?: runtime?.config ?: MocklaneConfig(enabled = false)
         return Rewrite.toGateway(url, resolved.host, resolved.port)
     }
 
@@ -65,6 +65,7 @@ public object Mocklane {
         if (!config.enabled) return config
         val resolved = config.withPlatformDefaults()
         if (runtime?.config == resolved) return resolved
+        val previous = runtime
         runtime =
             Runtime(
                 config = resolved,
@@ -77,12 +78,16 @@ public object Mocklane {
                         ),
                     ),
             )
+        // Release the executor of the runtime this one replaces.
+        previous?.logger?.close()
         return resolved
     }
 
     /** Clear the runtime. Intended for tests and adapter teardown. */
     @MocklaneInternalApi
     public fun reset() {
+        val previous = runtime
         runtime = null
+        previous?.logger?.close()
     }
 }

@@ -8,8 +8,9 @@ import kotlin.test.assertTrue
 
 class MocklaneConfigTest {
     @Test
-    fun defaultIsDisabled() {
-        assertFalse(MocklaneConfig().enabled)
+    fun carriesEnabledFlag() {
+        assertFalse(MocklaneConfig(enabled = false).enabled)
+        assertTrue(MocklaneConfig(enabled = true).enabled)
     }
 
     @Test
@@ -21,6 +22,7 @@ class MocklaneConfigTest {
                         deviceName = "custom-name",
                         appVersion = "1.2.3",
                     ),
+                enabled = false,
             ).withPlatformDefaults()
 
         val device = config.device!!
@@ -34,7 +36,7 @@ class MocklaneConfigTest {
 
     @Test
     fun fillsDeviceWhenConfigHasNone() {
-        val device = MocklaneConfig().withPlatformDefaults().device!!
+        val device = MocklaneConfig(enabled = false).withPlatformDefaults().device!!
         assertTrue(
             device.deviceId!!.startsWith("android:") || device.deviceId!!.startsWith("jvm:"),
         )
@@ -44,24 +46,24 @@ class MocklaneConfigTest {
     @Test
     fun rejectsBlankHost() {
         assertFailsWith<IllegalArgumentException> {
-            MocklaneConfig(host = " ")
+            MocklaneConfig(host = " ", enabled = false)
         }
     }
 
     @Test
     fun rejectsOutOfRangePort() {
         assertFailsWith<IllegalArgumentException> {
-            MocklaneConfig(port = 0)
+            MocklaneConfig(port = 0, enabled = false)
         }
         assertFailsWith<IllegalArgumentException> {
-            MocklaneConfig(port = 65536)
+            MocklaneConfig(port = 65536, enabled = false)
         }
     }
 
     @Test
     fun rejectsNonPositiveProbeTimeout() {
         assertFailsWith<IllegalArgumentException> {
-            MocklaneConfig(probeTimeoutMs = 0)
+            MocklaneConfig(probeTimeoutMs = 0, enabled = false)
         }
     }
 }

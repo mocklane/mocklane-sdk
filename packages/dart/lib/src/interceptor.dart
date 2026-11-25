@@ -4,8 +4,12 @@ import 'config.dart';
 import 'rewrite.dart';
 import 'transport.dart';
 
-/// Dio interceptor (SRP): rewrite absolute http(s) URIs when gateway is up.
-class MocklaneInterceptor extends QueuedInterceptor {
+/// Dio interceptor: rewrites absolute http(s) URIs when the gateway is up.
+///
+/// A plain [Interceptor], not [QueuedInterceptor]: requests are independent,
+/// and queueing them would serialise all app traffic behind the reachability
+/// probe.
+class MocklaneInterceptor extends Interceptor {
   MocklaneInterceptor({
     required this.config,
     required this.probe,

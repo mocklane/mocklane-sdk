@@ -1,4 +1,4 @@
-// Immutable runtime options (Config — SRP).
+// Immutable runtime options.
 
 import 'dart:math';
 
@@ -66,7 +66,7 @@ class MocklaneConfig {
     bool failOpen = true,
     Duration probeTimeout = defaultProbeTimeout,
     DeviceMetadata? device,
-    bool enabled = true,
+    required bool enabled,
   }) {
     if (host.trim().isEmpty) {
       throw ArgumentError.value(host, 'host', 'must not be blank');
@@ -105,6 +105,9 @@ class MocklaneConfig {
   final bool failOpen;
   final Duration probeTimeout;
   final DeviceMetadata? device;
+
+  /// Opt-in switch; required, with no default. A disabled `Mocklane.install()`
+  /// is a no-op and leaves any running installation untouched.
   final bool enabled;
 
   /// Fill missing device labels from the current platform.

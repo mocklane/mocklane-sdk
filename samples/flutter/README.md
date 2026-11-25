@@ -8,6 +8,6 @@ flutter pub get
 flutter run
 ```
 
-Use **Run all** in the app while Desktop is Listening on :6625.
+Use **Run all** in the app while the Mocklane app is listening on :6625.
 
 See [`../README.md`](../README.md).

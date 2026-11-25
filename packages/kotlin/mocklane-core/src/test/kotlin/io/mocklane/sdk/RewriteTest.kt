@@ -6,6 +6,7 @@ import java.nio.file.Path
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @OptIn(MocklaneInternalApi::class)
@@ -51,6 +52,31 @@ class RewriteTest {
         assertEquals(already, Rewrite.toGateway(already))
         assertTrue(Rewrite.isGatewayUrl(already))
         assertFalse(Rewrite.isGatewayUrl("https://api.example.com/v1"))
+    }
+
+    @Test
+    fun originalFromGatewayUnwrapsTheEmbeddedOrigin() {
+        assertEquals(
+            "https://api.example.com/v1/me",
+            Rewrite.originalFromGateway("http://127.0.0.1:6625/https://api.example.com/v1/me"),
+        )
+        assertEquals(
+            "https://api.example.com/v1/me?page=2",
+            Rewrite.originalFromGateway(
+                "http://127.0.0.1:6625/https://api.example.com/v1/me?page=2",
+            ),
+        )
+        assertEquals(
+            "http://[::1]:8080/v1/me",
+            Rewrite.originalFromGateway("http://127.0.0.1:6625/http://[::1]:8080/v1/me"),
+        )
+    }
+
+    @Test
+    fun originalFromGatewayRejectsNonGatewayUrls() {
+        assertNull(Rewrite.originalFromGateway("https://api.example.com/v1"))
+        assertNull(Rewrite.originalFromGateway("http://127.0.0.1:6625/"))
+        assertNull(Rewrite.originalFromGateway("http://127.0.0.1:6625/not-a-url"))
     }
 }
 

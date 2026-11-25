@@ -1,11 +1,13 @@
-// Masking (SRP): redact secrets before optional log mirroring.
+// Redacts secrets in log messages before they are sent.
 
 import 'dart:convert';
 
 const _defaultHeaderKeys = {
   'authorization',
   'cookie',
+  'set-cookie',
   'x-api-key',
+  'x-auth-token',
   'proxy-authorization',
 };
 
@@ -14,8 +16,12 @@ const _defaultJsonKeys = {
   'token',
   'access_token',
   'refresh_token',
+  'id_token',
   'secret',
+  'client_secret',
   'api_key',
+  'session',
+  'session_id',
 };
 
 Map<String, String> maskHeaders(

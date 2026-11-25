@@ -5,7 +5,7 @@ import io.mocklane.sdk.MocklaneInternalApi
 import java.net.HttpURLConnection
 import java.net.URL
 
-/** Reachability probe (SRP + DIP). */
+/** Reachability probe for the Desktop gateway. */
 @MocklaneInternalApi
 public fun interface GatewayProbe {
     public fun isReachable(): Boolean

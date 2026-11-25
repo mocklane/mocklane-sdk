@@ -2,7 +2,7 @@ import Foundation
 
 /// Entry point for Mocklane.
 ///
-/// Interception is opt-in; pass `enabled` explicitly to `urlSession`.
+/// Interception is opt-in; pass `enabled` explicitly to `urlSession` or `install`.
 public enum Mocklane {
     final class Runtime: @unchecked Sendable {
         let config: MocklaneConfig
@@ -49,7 +49,7 @@ public enum Mocklane {
     /// This is the full settings overload; the Boolean overload only enables or
     /// disables the default config. Create the session once and reuse it. Set
     /// `enabled = true` to intercept; a disabled config returns a plain session
-    /// and disables `log`. Existing enabled sessions keep intercepting.
+    /// and leaves the most recent enabled session's `log` runtime untouched.
     ///
     /// The config is also used by `log`. With multiple sessions, the most
     /// recently created enabled session wins.
@@ -68,7 +68,7 @@ public enum Mocklane {
         )
     }
 
-    /// Returns a copy of `configuration` with Mocklane's URLProtocol installed.
+    /// Installs Mocklane into a copy of `configuration`.
     ///
     /// Use this when the app owns its session factory: decorate the
     /// configuration, then create the session with your own delegate and
@@ -77,11 +77,12 @@ public enum Mocklane {
     /// inserted first.
     ///
     /// Interception is opt-in; `enabled = false` returns the configuration
-    /// unchanged and disables `log`. Create the session once and reuse it.
+    /// unchanged and leaves an existing enabled session's `log` runtime
+    /// untouched. Create the session once and reuse it.
     ///
     /// The default gateway is `127.0.0.1:6625`; pass
     /// `MocklaneConfig(port:enabled:)` to use a different gateway.
-    public static func intercepting(
+    public static func install(
         _ configuration: URLSessionConfiguration,
         config: MocklaneConfig
     ) -> URLSessionConfiguration {
@@ -92,12 +93,12 @@ public enum Mocklane {
         ) ?? configuration
     }
 
-    /// Shorthand for `intercepting(configuration, config: MocklaneConfig(enabled: enabled))`.
-    public static func intercepting(
+    /// Shorthand for `install(configuration, config: MocklaneConfig(enabled: enabled))`.
+    public static func install(
         _ configuration: URLSessionConfiguration,
         enabled: Bool
     ) -> URLSessionConfiguration {
-        intercepting(configuration, config: MocklaneConfig(enabled: enabled))
+        install(configuration, config: MocklaneConfig(enabled: enabled))
     }
 
     /// Re-bind the physical-iOS USB mux listen sockets (after unlock / resume).
@@ -108,7 +109,7 @@ public enum Mocklane {
 
     /// Rewrite an absolute URL to the gateway form.
     public static func rewrite(_ url: String, config: MocklaneConfig? = nil) -> String {
-        let resolved = config ?? runtimeOrNil?.config ?? MocklaneConfig()
+        let resolved = config ?? runtimeOrNil?.config ?? MocklaneConfig(enabled: false)
         return MocklaneRewrite.rewriteToGateway(url, host: resolved.host, port: resolved.port)
     }
 
@@ -149,16 +150,10 @@ public enum Mocklane {
         configuration: URLSessionConfiguration,
         probe: GatewayProbe?
     ) -> URLSessionConfiguration? {
-        guard config.enabled else {
-            lock.lock()
-            loggerRuntime = nil
-            let hasActiveSession = runtime != nil
-            lock.unlock()
-            if !hasActiveSession {
-                UsbBridge.stop()
-            }
-            return nil
-        }
+        // A disabled config is a pure pass-through: it neither clears the log
+        // runtime bound by an enabled session nor stops the USB bridge.
+        // `Mocklane.reset()` is the teardown entry point.
+        guard config.enabled else { return nil }
 
         // Foreground, in-process sessions only: background sessions reject
         // custom URLProtocol classes, so interception cannot work there.

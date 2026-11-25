@@ -88,6 +88,9 @@ class _ThrowingTransport implements LoggerTransport {
   }) async {
     throw StateError('down');
   }
+
+  @override
+  void close() {}
 }
 
 class _CapturingTransport implements LoggerTransport {
@@ -101,4 +104,7 @@ class _CapturingTransport implements LoggerTransport {
   }) async {
     last = (message, level, tag);
   }
+
+  @override
+  void close() {}
 }

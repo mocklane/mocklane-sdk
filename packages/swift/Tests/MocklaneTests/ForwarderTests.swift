@@ -329,6 +329,104 @@ import XCTest
             XCTAssertEqual(cookieHeader.get(), "sid=abc")
         }
 
+        func testAbsoluteSameOriginRedirectKeepsCredentials() async throws {
+            removeCookies(for: "api.example.com")
+            defer { removeCookies(for: "api.example.com") }
+
+            let finalAuth = LockedValue<String>()
+            let finalCookie = LockedValue<String>()
+            let server = try TestHTTPServer { request, fd in
+                switch request.path {
+                case "/https://api.example.com/start":
+                    TestHTTPServer.respond(
+                        fd,
+                        status: "302 Found",
+                        headers: [
+                            "Location": "https://api.example.com/final",
+                            "Set-Cookie": "sid=abc; Path=/",
+                        ],
+                        body: ""
+                    )
+                case "/https://api.example.com/final":
+                    finalAuth.set(request.value(for: "Authorization"))
+                    finalCookie.set(request.value(for: "Cookie"))
+                    TestHTTPServer.respond(fd, body: "ok")
+                default:
+                    TestHTTPServer.respond(fd, status: "404 Not Found", body: "")
+                }
+            }
+            defer { server.stop() }
+
+            let configuration = URLSessionConfiguration.ephemeral
+            configuration.httpCookieStorage = HTTPCookieStorage.shared
+            let session = Mocklane.makeSession(
+                config: MocklaneConfig(
+                    host: "127.0.0.1",
+                    port: Int(server.port),
+                    enabled: true
+                ),
+                configuration: configuration,
+                probe: AlwaysReachableProbe()
+            )
+
+            var request = URLRequest(url: URL(string: "https://api.example.com/start")!)
+            request.setValue("Bearer token", forHTTPHeaderField: "Authorization")
+            let (data, _) = try await session.data(for: request)
+
+            XCTAssertEqual(String(decoding: data, as: UTF8.self), "ok")
+            // Same-origin hop: the gateway only sees the rewritten URL, so the
+            // SDK has to keep credentials and attach the origin's cookies.
+            XCTAssertEqual(finalAuth.get(), "Bearer token")
+            XCTAssertEqual(finalCookie.get(), "sid=abc")
+        }
+
+        func testGatewayPrefixedRedirectIsUnwrappedAndStaysOnOrigin() async throws {
+            let gatewayPort = LockedValue<UInt16>()
+            let finalAuth = LockedValue<String>()
+            let lock = NSLock()
+            var paths: [String] = []
+            let server = try TestHTTPServer { request, fd in
+                lock.lock()
+                paths.append(request.path)
+                lock.unlock()
+                switch request.path {
+                case "/https://api.example.com/start":
+                    // Desktop rewrites same-origin `Location` values to the
+                    // gateway form (issue #114).
+                    let location =
+                        "http://127.0.0.1:\(gatewayPort.get() ?? 0)/https://api.example.com/final"
+                    TestHTTPServer.respond(
+                        fd,
+                        status: "302 Found",
+                        headers: ["Location": location],
+                        body: ""
+                    )
+                case "/https://api.example.com/final":
+                    finalAuth.set(request.value(for: "Authorization"))
+                    TestHTTPServer.respond(fd, body: "ok")
+                default:
+                    TestHTTPServer.respond(fd, status: "404 Not Found", body: "")
+                }
+            }
+            gatewayPort.set(server.port)
+            defer { server.stop() }
+
+            let session = makeSession(server: server)
+            var request = URLRequest(url: URL(string: "https://api.example.com/start")!)
+            request.setValue("Bearer token", forHTTPHeaderField: "Authorization")
+            let (data, _) = try await session.data(for: request)
+
+            XCTAssertEqual(String(decoding: data, as: UTF8.self), "ok")
+            XCTAssertEqual(finalAuth.get(), "Bearer token")
+            lock.lock()
+            let seen = paths
+            lock.unlock()
+            XCTAssertEqual(
+                seen,
+                ["/https://api.example.com/start", "/https://api.example.com/final"]
+            )
+        }
+
         func testCancellationStopsForwarding() async throws {
             let started = DispatchSemaphore(value: 0)
             let release = DispatchSemaphore(value: 0)

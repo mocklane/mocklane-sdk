@@ -10,7 +10,7 @@ enum MocklaneBootstrap {
                 deviceId: "swift-sample-1",
                 deviceName: "swift-sample",
                 os: "macos",
-                appVersion: "0.1.0"
+                appVersion: "0.1.1"
             )
         )
     )

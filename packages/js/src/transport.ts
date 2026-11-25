@@ -1,6 +1,6 @@
 /**
- * Transport (SRP + ISP): reachability of the Desktop gateway.
- * Implementations are injectable (DIP) so tests can stub without sockets.
+ * Reachability of the Desktop gateway.
+ * The probe is injectable so tests can run without sockets.
  */
 
 export interface GatewayProbe {

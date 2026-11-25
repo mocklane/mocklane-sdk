@@ -18,6 +18,8 @@ class LoggerTest {
         override fun send(message: String, level: LogLevel, tag: String?) {
             error("boom")
         }
+
+        override fun close() {}
     }
 
     @Test
@@ -28,8 +30,24 @@ class LoggerTest {
     @Test
     fun logForwardsMessageLevelAndTag() {
         var captured: Triple<String, LogLevel, String?>? = null
-        Logger { m, l, t -> captured = Triple(m, l, t) }.log("hi", LogLevel.WARN, "home")
+        Logger(
+            object : LoggerTransport {
+                override fun send(message: String, level: LogLevel, tag: String?) {
+                    captured = Triple(message, level, tag)
+                }
+
+                override fun close() {}
+            },
+        ).log("hi", LogLevel.WARN, "home")
         assertEquals(Triple("hi", LogLevel.WARN, "home"), captured)
+    }
+
+    @Test
+    fun closeShutsDownTheExecutor() {
+        val executor = Executors.newSingleThreadExecutor()
+        val transport = HttpLoggerTransport(host = "127.0.0.1", port = 1, executor = executor)
+        transport.close()
+        assertTrue(executor.isShutdown)
     }
 
     @Test
@@ -72,6 +90,41 @@ class LoggerTest {
             assertTrue(body.contains("\"deviceName\":\"log-test\""), body)
             assertEquals("log-test", capturedDeviceName.single())
             assertEquals("kotlin-test", capturedDeviceId.single())
+        } finally {
+            executor.shutdownNow()
+            server.stop(0)
+        }
+    }
+
+    @Test
+    fun httpTransportEscapesControlCharacters() {
+        val received = CountDownLatch(1)
+        val capturedBody = mutableListOf<String>()
+        val server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
+        server.createContext("/__mocklane/v1/log") { exchange ->
+            capturedBody += exchange.requestBody.readBytes().decodeToString()
+            exchange.sendResponseHeaders(200, -1)
+            exchange.close()
+            received.countDown()
+        }
+        server.start()
+
+        val executor: ExecutorService = Executors.newSingleThreadExecutor()
+        try {
+            val transport =
+                HttpLoggerTransport(
+                    host = "127.0.0.1",
+                    port = server.address.port,
+                    executor = executor,
+                )
+            transport.send("tab\there\u0001end", LogLevel.INFO, null)
+
+            assertTrue(received.await(5, TimeUnit.SECONDS), "gateway never received the log POST")
+            val body = capturedBody.single()
+            assertTrue(body.contains("\"message\":\"tab\\there\\u0001end\""), body)
+            // ISO-8601 UTC timestamp with milliseconds, same shape as the other SDKs.
+            val tsPattern = Regex("\"ts\":\"\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z\"")
+            assertTrue(tsPattern.containsMatchIn(body), body)
         } finally {
             executor.shutdownNow()
             server.stop(0)

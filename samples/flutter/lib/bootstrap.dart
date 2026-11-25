@@ -12,20 +12,21 @@ class MocklaneBootstrap {
         : '127.0.0.1';
   }
 
-  static void start() {
+  static void install() {
     if (!isEnabled) return;
-    Mocklane.start(
+    Mocklane.install(
+      enabled: isEnabled,
       host: gatewayHost(),
       device: const DeviceMetadata(
         deviceName: 'flutter-sample',
         os: 'flutter',
-        appVersion: '0.1.0',
+        appVersion: '0.1.1',
       ),
     );
   }
 
-  static void stop() {
+  static void uninstall() {
     if (!isEnabled) return;
-    Mocklane.stop();
+    Mocklane.uninstall();
   }
 }

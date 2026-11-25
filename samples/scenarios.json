@@ -1,0 +1,203 @@
+{
+  "version": 1,
+  "scenarios": [
+    {
+      "id": "S01",
+      "label": "GET + query",
+      "description": "Basic GET with query string; Postman Echo echoes JSON.",
+      "kind": "api",
+      "method": "GET",
+      "url": "https://postman-echo.com/get?source=mocklane&case=get",
+      "expectedTraffic": {
+        "mode": "FORWARD",
+        "method": "GET",
+        "apiPathSuffix": "/get"
+      }
+    },
+    {
+      "id": "S02",
+      "label": "POST JSON",
+      "description": "POST JSON body; Postman Echo echoes parsed JSON.",
+      "kind": "api",
+      "method": "POST",
+      "url": "https://postman-echo.com/post",
+      "contentType": "application/json",
+      "body": "{\"hello\":\"mocklane\",\"case\":\"post-json\"}",
+      "expectedTraffic": {
+        "mode": "FORWARD",
+        "method": "POST",
+        "apiPathSuffix": "/post"
+      }
+    },
+    {
+      "id": "S03",
+      "label": "PUT JSON",
+      "description": "PUT JSON body.",
+      "kind": "api",
+      "method": "PUT",
+      "url": "https://postman-echo.com/put",
+      "contentType": "application/json",
+      "body": "{\"hello\":\"mocklane\",\"case\":\"put\"}",
+      "expectedTraffic": {
+        "mode": "FORWARD",
+        "method": "PUT",
+        "apiPathSuffix": "/put"
+      }
+    },
+    {
+      "id": "S04",
+      "label": "PATCH JSON",
+      "description": "PATCH JSON body.",
+      "kind": "api",
+      "method": "PATCH",
+      "url": "https://postman-echo.com/patch",
+      "contentType": "application/json",
+      "body": "{\"hello\":\"mocklane\",\"case\":\"patch\"}",
+      "expectedTraffic": {
+        "mode": "FORWARD",
+        "method": "PATCH",
+        "apiPathSuffix": "/patch"
+      }
+    },
+    {
+      "id": "S05",
+      "label": "DELETE",
+      "description": "DELETE request.",
+      "kind": "api",
+      "method": "DELETE",
+      "url": "https://postman-echo.com/delete",
+      "expectedTraffic": {
+        "mode": "FORWARD",
+        "method": "DELETE",
+        "apiPathSuffix": "/delete"
+      }
+    },
+    {
+      "id": "S06",
+      "label": "Form POST",
+      "description": "application/x-www-form-urlencoded body.",
+      "kind": "api",
+      "method": "POST",
+      "url": "https://postman-echo.com/post",
+      "contentType": "application/x-www-form-urlencoded",
+      "body": "hello=mocklane&case=form",
+      "expectedTraffic": {
+        "mode": "FORWARD",
+        "method": "POST",
+        "apiPathSuffix": "/post"
+      }
+    },
+    {
+      "id": "S07",
+      "label": "Custom headers",
+      "description": "GET with Authorization header echoed in response.",
+      "kind": "api",
+      "method": "GET",
+      "url": "https://postman-echo.com/headers",
+      "headers": {
+        "Authorization": "Bearer mocklane-demo"
+      },
+      "expectedTraffic": {
+        "mode": "FORWARD",
+        "method": "GET",
+        "apiPathSuffix": "/headers"
+      }
+    },
+    {
+      "id": "S08",
+      "label": "JSON resource",
+      "description": "GET JSON document from jsonplaceholder.",
+      "kind": "api",
+      "method": "GET",
+      "url": "https://jsonplaceholder.typicode.com/posts/1",
+      "expectedTraffic": {
+        "mode": "FORWARD",
+        "method": "GET",
+        "apiPathSuffix": "/posts/1"
+      }
+    },
+    {
+      "id": "S09",
+      "label": "Binary bytes",
+      "description": "GET 256 raw bytes.",
+      "kind": "api",
+      "method": "GET",
+      "url": "https://postman-echo.com/bytes/256",
+      "responseKind": "binary",
+      "expectedTraffic": {
+        "mode": "FORWARD",
+        "method": "GET",
+        "apiPathSuffix": "/bytes/256"
+      }
+    },
+    {
+      "id": "S10",
+      "label": "Gzip response",
+      "description": "GET gzip-compressed binary body.",
+      "kind": "api",
+      "method": "GET",
+      "url": "https://postman-echo.com/gzip",
+      "responseKind": "binary",
+      "expectedTraffic": {
+        "mode": "FORWARD",
+        "method": "GET",
+        "apiPathSuffix": "/gzip"
+      }
+    },
+    {
+      "id": "S11",
+      "label": "Slow 2s",
+      "description": "Delayed response — useful for pending Traffic rows.",
+      "kind": "api",
+      "method": "GET",
+      "url": "https://postman-echo.com/delay/2",
+      "expectedTraffic": {
+        "mode": "FORWARD",
+        "method": "GET",
+        "apiPathSuffix": "/delay/2"
+      }
+    },
+    {
+      "id": "S12",
+      "label": "HTTP 404",
+      "description": "Upstream returns 404 status.",
+      "kind": "api",
+      "method": "GET",
+      "url": "https://postman-echo.com/status/404",
+      "expectedTraffic": {
+        "mode": "FORWARD",
+        "method": "GET",
+        "apiPathSuffix": "/status/404",
+        "status": 404
+      }
+    },
+    {
+      "id": "L01",
+      "label": "SDK log info",
+      "description": "Structured console log via Mocklane.log.",
+      "kind": "sdk_log",
+      "logLevel": "info",
+      "logMessage": "hello from mocklane-sample",
+      "logTag": "ui",
+      "expectedTraffic": {
+        "mode": "SDK_LOG",
+        "method": "POST",
+        "apiPath": "/__mocklane/v1/log"
+      }
+    },
+    {
+      "id": "L02",
+      "label": "SDK log warn",
+      "description": "Warning-level SDK log.",
+      "kind": "sdk_log",
+      "logLevel": "warn",
+      "logMessage": "network warning from mocklane-sample",
+      "logTag": "network",
+      "expectedTraffic": {
+        "mode": "SDK_LOG",
+        "method": "POST",
+        "apiPath": "/__mocklane/v1/log"
+      }
+    }
+  ]
+}

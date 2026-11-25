@@ -1,0 +1,16 @@
+node_modules/
+dist/
+coverage/
+*.log
+.DS_Store
+.turbo/
+*.tsbuildinfo
+.dart_tool/
+**/pubspec.lock
+packages/dart/.packages
+packages/swift/.build/
+packages/swift/.swiftpm/
+
+# SwiftPM build artifacts at repo root (distribution manifest)
+.build/
+.swiftpm/

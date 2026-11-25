@@ -1,0 +1,38 @@
+name: Publish Dart SDK
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "dart-v*"
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: release
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - uses: dart-lang/setup-dart@2286a0c042b44434fe26d292bbce8d34f7ec662b # v1.8.2
+
+      - name: Analyze, test, and dry-run
+        working-directory: packages/dart
+        run: |
+          dart pub get
+          dart analyze --fatal-warnings
+          dart test
+          dart pub publish --dry-run
+
+      - name: Publish to pub.dev
+        working-directory: packages/dart
+        env:
+          PUB_CREDENTIALS: ${{ secrets.PUB_CREDENTIALS }}
+        run: |
+          mkdir -p "$HOME/.config/dart"
+          printf '%s' "$PUB_CREDENTIALS" > "$HOME/.config/dart/pub-credentials.json"
+          chmod 600 "$HOME/.config/dart/pub-credentials.json"
+          dart pub publish --force

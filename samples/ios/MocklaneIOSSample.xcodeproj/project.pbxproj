@@ -1,0 +1,343 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		00AED21AECC29D35F085FCB7 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63A2D3708786A1229B0DE05D /* ContentView.swift */; };
+		0A884259E121C92A33C7486B /* MocklaneIOSSampleApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABA296E818D9296D2D3CD7BA /* MocklaneIOSSampleApp.swift */; };
+		859F13F3D757D6C3117EE913 /* Mocklane in Frameworks */ = {isa = PBXBuildFile; productRef = BB20966F6B89BB8D0E14A7CF /* Mocklane */; };
+		C181123F5B296F9B9C7C3409 /* DemoRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9122B7C80CE94EACA74B9C9 /* DemoRunner.swift */; };
+		D70E558E1B2C4F7AFB0AB4CA /* DemoScenarios.swift in Sources */ = {isa = PBXBuildFile; fileRef = 471C855EC7A144926C2B2E42 /* DemoScenarios.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		471C855EC7A144926C2B2E42 /* DemoScenarios.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoScenarios.swift; sourceTree = "<group>"; };
+		63A2D3708786A1229B0DE05D /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		755EE5782E7F5599CD7D97F6 /* swift */ = {isa = PBXFileReference; lastKnownFileType = folder; name = swift; path = ../../packages/swift; sourceTree = SOURCE_ROOT; };
+		8269C01B1032551098E99653 /* MocklaneIOSSample.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = MocklaneIOSSample.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		ABA296E818D9296D2D3CD7BA /* MocklaneIOSSampleApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MocklaneIOSSampleApp.swift; sourceTree = "<group>"; };
+		E9122B7C80CE94EACA74B9C9 /* DemoRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoRunner.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		71A24AEC5079CFFE4D3C70D4 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				859F13F3D757D6C3117EE913 /* Mocklane in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		0AF246EAEEF6326074BEACD9 = {
+			isa = PBXGroup;
+			children = (
+				6B8994A756B4A878553620AE /* App */,
+				747CD2D426D32279DCB26F36 /* Packages */,
+				E506E3C54E107DC4C343FDDB /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		6B8994A756B4A878553620AE /* App */ = {
+			isa = PBXGroup;
+			children = (
+				63A2D3708786A1229B0DE05D /* ContentView.swift */,
+				E9122B7C80CE94EACA74B9C9 /* DemoRunner.swift */,
+				471C855EC7A144926C2B2E42 /* DemoScenarios.swift */,
+				ABA296E818D9296D2D3CD7BA /* MocklaneIOSSampleApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		747CD2D426D32279DCB26F36 /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				755EE5782E7F5599CD7D97F6 /* swift */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
+		E506E3C54E107DC4C343FDDB /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				8269C01B1032551098E99653 /* MocklaneIOSSample.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		91CB9092D27FBD8D348F5F31 /* MocklaneIOSSample */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4C5CBC4473A51888921EA942 /* Build configuration list for PBXNativeTarget "MocklaneIOSSample" */;
+			buildPhases = (
+				349809E9D0EECD0578775225 /* Sources */,
+				71A24AEC5079CFFE4D3C70D4 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MocklaneIOSSample;
+			packageProductDependencies = (
+				BB20966F6B89BB8D0E14A7CF /* Mocklane */,
+			);
+			productName = MocklaneIOSSample;
+			productReference = 8269C01B1032551098E99653 /* MocklaneIOSSample.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		145A78F9114C90268E0A78F4 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+				};
+			};
+			buildConfigurationList = 9BC6883F3BC5A6C68E90BE6F /* Build configuration list for PBXProject "MocklaneIOSSample" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 0AF246EAEEF6326074BEACD9;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				87CCDB966ABE5C3EB5034EB7 /* XCLocalSwiftPackageReference "../../packages/swift" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = E506E3C54E107DC4C343FDDB /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				91CB9092D27FBD8D348F5F31 /* MocklaneIOSSample */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		349809E9D0EECD0578775225 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				00AED21AECC29D35F085FCB7 /* ContentView.swift in Sources */,
+				C181123F5B296F9B9C7C3409 /* DemoRunner.swift in Sources */,
+				D70E558E1B2C4F7AFB0AB4CA /* DemoScenarios.swift in Sources */,
+				0A884259E121C92A33C7486B /* MocklaneIOSSampleApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		2393D2B6601B84105A691ADC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_FILE = App/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = io.mocklane.sample.ios;
+				PRODUCT_NAME = MocklaneIOSSample;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		6B559A5C67106D8B9CAF40EC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				BASE_SDK = iphoneos;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		710974C8B88FA7984916AC62 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_FILE = App/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = io.mocklane.sample.ios;
+				PRODUCT_NAME = MocklaneIOSSample;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		AAA955D33AEA9766A705FFF1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				BASE_SDK = iphoneos;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		4C5CBC4473A51888921EA942 /* Build configuration list for PBXNativeTarget "MocklaneIOSSample" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				710974C8B88FA7984916AC62 /* Debug */,
+				2393D2B6601B84105A691ADC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		9BC6883F3BC5A6C68E90BE6F /* Build configuration list for PBXProject "MocklaneIOSSample" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6B559A5C67106D8B9CAF40EC /* Debug */,
+				AAA955D33AEA9766A705FFF1 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		87CCDB966ABE5C3EB5034EB7 /* XCLocalSwiftPackageReference "../../packages/swift" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../../packages/swift;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		BB20966F6B89BB8D0E14A7CF /* Mocklane */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Mocklane;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 145A78F9114C90268E0A78F4 /* Project object */;
+}

@@ -1,0 +1,56 @@
+{
+  "name": "mocklane-sdk",
+  "version": "0.1.1",
+  "description": "Debug-only HTTP interceptor that routes traffic through Mocklane Desktop (:6625)",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run build && npm run test"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT",
+  "author": "Mocklane contributors",
+  "homepage": "https://github.com/mocklane/mocklane-sdk/tree/main/packages/js#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mocklane/mocklane-sdk.git",
+    "directory": "packages/js"
+  },
+  "bugs": {
+    "url": "https://github.com/mocklane/mocklane-sdk/issues"
+  },
+  "keywords": [
+    "mocklane",
+    "http",
+    "interceptor",
+    "fetch",
+    "debug",
+    "proxy",
+    "mock"
+  ],
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

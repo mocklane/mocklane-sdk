@@ -1,0 +1,70 @@
+name: Publish Kotlin SDK
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "kotlin-v*"
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: release
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Test and publish to Maven Central
+        working-directory: packages/kotlin
+        env:
+          # Portal user token from central.sonatype.com (not the login password).
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          # ASCII-armored PGP private key + passphrase (Central requires signatures).
+          # The key is normalised below before it reaches Gradle: some secret stores
+          # hand it back with literal `\n` escapes instead of real line breaks, which
+          # the signing plugin reports only as "Could not read PGP secret key".
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
+        run: |
+          chmod +x gradlew
+
+          key_file="$RUNNER_TEMP/signing-key.asc"
+          # Normalise: literal `\n` escapes (some secret stores) become real line
+          # breaks, and Windows line endings are stripped.
+          sed 's/\\n/\n/g' <<< "$SIGNING_KEY" | tr -d '\r' > "$key_file"
+          # Never echo key material: this workflow runs in a public repository.
+          # (GitHub masks secret-derived output anyway, so report the shape only.)
+          if [ "$(head -n 1 "$key_file")" != "-----BEGIN PGP PRIVATE KEY BLOCK-----" ]; then
+            if head -n 1 "$key_file" | grep -q 'BEGIN PGP PRIVATE KEY BLOCK'; then
+              shape="the armor header is not on the first line"
+            elif head -n 1 "$key_file" | grep -q 'BEGIN PGP PUBLIC KEY BLOCK'; then
+              shape="it is a PUBLIC key block; Maven Central needs the PRIVATE key"
+            elif head -n 1 "$key_file" | grep -q 'BEGIN PGP'; then
+              shape="it is a PGP block, but not a private key block"
+            else
+              shape="no armor header; it may be a binary export or the wrong value"
+            fi
+            echo "::error::SIGNING_KEY is not an ASCII-armored PGP private key: ${shape} ($(wc -c < "$key_file") bytes, $(wc -l < "$key_file") lines). Re-add it with: gpg --armor --export-secret-keys <KEY_ID> | gh secret set SIGNING_KEY --repo mocklane/mocklane-sdk"
+            exit 1
+          fi
+          if ! grep -q '^-----END PGP PRIVATE KEY BLOCK-----' "$key_file"; then
+            echo "::error::SIGNING_KEY is missing the END PGP PRIVATE KEY BLOCK footer."
+            exit 1
+          fi
+          if ! gpg --batch --import-options show-only --import "$key_file" >/dev/null 2>&1; then
+            echo "::error::SIGNING_KEY is not a readable PGP private key."
+            exit 1
+          fi
+          # Multi-line values survive in a process environment; let Gradle read it there.
+          export ORG_GRADLE_PROJECT_signingInMemoryKey="$(cat "$key_file")"
+
+          ./gradlew test publishAndReleaseToMavenCentral

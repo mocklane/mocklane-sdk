@@ -1,0 +1,73 @@
+[
+  {
+    "id": "R01",
+    "input": "https://api.example.com/v1/me",
+    "gatewayHost": "127.0.0.1",
+    "port": 6625,
+    "expected": "http://127.0.0.1:6625/https://api.example.com/v1/me"
+  },
+  {
+    "id": "R02",
+    "input": "http://api.example.com/v1/me",
+    "gatewayHost": "127.0.0.1",
+    "port": 6625,
+    "expected": "http://127.0.0.1:6625/http://api.example.com/v1/me"
+  },
+  {
+    "id": "R03",
+    "input": "https://api.example.com:8443/v1",
+    "gatewayHost": "127.0.0.1",
+    "port": 6625,
+    "expected": "http://127.0.0.1:6625/https://api.example.com:8443/v1"
+  },
+  {
+    "id": "R04",
+    "input": "https://api.example.com/v1/me?x=1&y=2",
+    "gatewayHost": "127.0.0.1",
+    "port": 6625,
+    "expected": "http://127.0.0.1:6625/https://api.example.com/v1/me?x=1&y=2"
+  },
+  {
+    "id": "R05",
+    "input": "https://api.example.com/v1/me#frag",
+    "gatewayHost": "127.0.0.1",
+    "port": 6625,
+    "expected": "http://127.0.0.1:6625/https://api.example.com/v1/me",
+    "notes": "Fragment stripped before gateway (U17)"
+  },
+  {
+    "id": "R06",
+    "input": "https://api.example.com",
+    "gatewayHost": "127.0.0.1",
+    "port": 6625,
+    "expected": "http://127.0.0.1:6625/https://api.example.com/"
+  },
+  {
+    "id": "R07",
+    "input": "https://192.168.1.10:8080/x",
+    "gatewayHost": "127.0.0.1",
+    "port": 6625,
+    "expected": "http://127.0.0.1:6625/https://192.168.1.10:8080/x"
+  },
+  {
+    "id": "R08",
+    "input": "https://localhost/v1",
+    "gatewayHost": "127.0.0.1",
+    "port": 6625,
+    "expected": "http://127.0.0.1:6625/https://localhost/v1"
+  },
+  {
+    "id": "R09",
+    "input": "https://api.example.com/foo%2Fbar",
+    "gatewayHost": "127.0.0.1",
+    "port": 6625,
+    "expected": "http://127.0.0.1:6625/https://api.example.com/foo%2Fbar"
+  },
+  {
+    "id": "R10",
+    "input": "https://api.example.com//double",
+    "gatewayHost": "127.0.0.1",
+    "port": 6625,
+    "expected": "http://127.0.0.1:6625/https://api.example.com//double"
+  }
+]

@@ -1,0 +1,39 @@
+name: MocklaneIOSSample
+options:
+  bundleIdPrefix: io.mocklane
+  deploymentTarget:
+    iOS: "16.0"
+  createIntermediateGroups: true
+  xcodeVersion: "15.0"
+settings:
+  BASE_SDK: iphoneos
+  SWIFT_VERSION: "5.9"
+  TARGETED_DEVICE_FAMILY: "1,2"
+packages:
+  Mocklane:
+    path: ../../packages/swift
+targets:
+  MocklaneIOSSample:
+    type: application
+    platform: iOS
+    sources:
+      - path: App
+        excludes:
+          - Info.plist
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: Mocklane
+        UILaunchScreen: {}
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: io.mocklane.sample.ios
+      PRODUCT_NAME: MocklaneIOSSample
+      CURRENT_PROJECT_VERSION: 1
+      MARKETING_VERSION: "0.1.0"
+    dependencies:
+      - package: Mocklane
+        product: Mocklane
+    scheme:
+      testTargets: []

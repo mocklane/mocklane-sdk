@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Mocklane Sample</string>
+    <string name="sample_title">Mocklane SDK demo</string>
+    <string name="sample_description">Same scenario catalog as web, iOS, Flutter, and Swift CLI. Desktop Listening on :6625 required.</string>
+    <string name="run_all">Run all</string>
+    <string name="clear_output">Clear output</string>
+    <string name="run">Run</string>
+</resources>

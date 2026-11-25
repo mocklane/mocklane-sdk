@@ -34,12 +34,12 @@ final class FacadeAndMaskingTests: XCTestCase {
         )
     }
 
-    func testInterceptingConfigurationAddsProtocolAndPreservesCallerConfig() {
+    func testInstallConfigurationAddsProtocolAndPreservesCallerConfig() {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [ExistingURLProtocol.self]
         configuration.timeoutIntervalForRequest = 42
 
-        let decorated = Mocklane.intercepting(
+        let decorated = Mocklane.install(
             configuration,
             config: MocklaneConfig(enabled: true)
         )
@@ -63,9 +63,9 @@ final class FacadeAndMaskingTests: XCTestCase {
         XCTAssertTrue(MocklaneURLProtocol.canInit(with: request))
     }
 
-    func testInterceptingDisabledReturnsConfigurationUnchanged() {
+    func testInstallDisabledReturnsConfigurationUnchanged() {
         let configuration = URLSessionConfiguration.ephemeral
-        let returned = Mocklane.intercepting(configuration, enabled: false)
+        let returned = Mocklane.install(configuration, enabled: false)
 
         XCTAssertNil(Mocklane.runtimeOrNil)
         XCTAssertNil(Mocklane.loggerRuntimeOrNil)
@@ -82,8 +82,10 @@ final class FacadeAndMaskingTests: XCTestCase {
 
         _ = Mocklane.urlSession(enabled: false, configuration: .ephemeral)
 
+        // A disabled config is a no-op for an enabled runtime: it neither
+        // clears the log runtime nor unbinds interception.
         XCTAssertNotNil(Mocklane.runtimeOrNil)
-        XCTAssertNil(Mocklane.loggerRuntimeOrNil)
+        XCTAssertNotNil(Mocklane.loggerRuntimeOrNil)
     }
 
     func testEnabledSessionUsesConfig() {
@@ -122,6 +124,38 @@ final class FacadeAndMaskingTests: XCTestCase {
         ]) as! [String: Any]
         XCTAssertEqual(masked["user"] as? String, "a")
         XCTAssertEqual(masked["password"] as? String, "[REDACTED]")
+    }
+
+    func testMaskingCoversNewSecretKeys() {
+        let headers = Masking.maskHeaders([
+            "Set-Cookie": "sid=abc",
+            "X-Auth-Token": "t",
+            "Content-Type": "text/plain",
+        ])
+        XCTAssertEqual(headers["Set-Cookie"], "[REDACTED]")
+        XCTAssertEqual(headers["X-Auth-Token"], "[REDACTED]")
+        XCTAssertEqual(headers["Content-Type"], "text/plain")
+
+        let masked = Masking.maskJSONValue([
+            "session": "s",
+            "session_id": "si",
+            "id_token": "i",
+            "client_secret": "c",
+            "user": "a",
+        ]) as! [String: Any]
+        for key in ["session", "session_id", "id_token", "client_secret"] {
+            XCTAssertEqual(masked[key] as? String, "[REDACTED]", key)
+        }
+        XCTAssertEqual(masked["user"] as? String, "a")
+    }
+
+    func testMaskJSONStringAcceptsAnyRoot() {
+        let array = Masking.maskJSONString("[{\"token\":\"t\"},{\"user\":\"a\"}]")
+        XCTAssertEqual(array, "[{\"token\":\"[REDACTED]\"},{\"user\":\"a\"}]")
+        // Scalar roots are valid JSON too; unchanged output is fine, but the
+        // call must not fall through as invalid.
+        XCTAssertEqual(Masking.maskJSONString("\"plain\""), "\"plain\"")
+        XCTAssertEqual(Masking.maskJSONString("not json"), "not json")
     }
 
     func testFailOpenUsesOriginalWhenUnreachable() async throws {

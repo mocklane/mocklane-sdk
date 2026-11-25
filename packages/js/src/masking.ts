@@ -1,10 +1,29 @@
 /**
- * Masking (SRP): redact secrets before optional log mirroring.
+ * Redacts secrets in log messages before they are sent.
  * Does not alter live request bodies sent through the gateway.
  */
 
-const DEFAULT_HEADER_KEYS = ['authorization', 'cookie', 'x-api-key', 'proxy-authorization'];
-const DEFAULT_JSON_KEYS = ['password', 'token', 'access_token', 'refresh_token', 'secret', 'api_key'];
+const DEFAULT_HEADER_KEYS = [
+  'authorization',
+  'cookie',
+  'x-api-key',
+  'proxy-authorization',
+  'x-auth-token',
+  'set-cookie',
+  'session',
+];
+const DEFAULT_JSON_KEYS = [
+  'password',
+  'token',
+  'access_token',
+  'refresh_token',
+  'secret',
+  'api_key',
+  'session',
+  'session_id',
+  'id_token',
+  'client_secret',
+];
 
 export interface MaskOptions {
   headerKeys?: string[];

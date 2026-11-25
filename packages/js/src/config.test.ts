@@ -8,11 +8,11 @@ describe('resolveConfig', () => {
   });
 
   it('applies defaults for port and fail-open', () => {
-    const c = resolveConfig();
+    const c = resolveConfig({ enabled: false });
     expect(c.port).toBe(6625);
     expect(c.host).toBe('127.0.0.1');
     expect(c.failOpen).toBe(true);
-    expect(c.enabled).toBe(true);
+    expect(c.enabled).toBe(false);
   });
 
   it('merges partial overrides', () => {
@@ -24,7 +24,7 @@ describe('resolveConfig', () => {
 
   describe('device defaults', () => {
     it('fills missing labels from the Node runtime', () => {
-      const c = resolveConfig();
+      const c = resolveConfig({ enabled: false });
       expect(c.device?.deviceId).toMatch(/^node:[0-9a-f]{8}$/);
       expect(c.device?.deviceName).toBe('Node');
       expect(c.device?.os).toBe('node');
@@ -33,6 +33,7 @@ describe('resolveConfig', () => {
 
     it('keeps provided labels and fills the rest', () => {
       const c = resolveConfig({
+        enabled: false,
         device: { deviceName: 'my-app', appVersion: '1.2.3' },
       });
       expect(c.device?.deviceName).toBe('my-app');
@@ -51,8 +52,8 @@ describe('resolveConfig', () => {
         },
       });
 
-      const first = resolveConfig();
-      const second = resolveConfig();
+      const first = resolveConfig({ enabled: false });
+      const second = resolveConfig({ enabled: false });
       expect(first.device?.os).toBe('web');
       expect(first.device?.deviceName).toBe('Browser');
       expect(first.device?.deviceId).toMatch(/^web:[0-9a-f]{8}$/);
@@ -71,28 +72,41 @@ describe('resolveConfig', () => {
         },
       });
 
-      const c = resolveConfig();
+      const c = resolveConfig({ enabled: false });
       expect(c.device?.os).toBe('web');
       expect(c.device?.deviceId).toMatch(/^web:/);
     });
   });
 
   describe('validation', () => {
+    it('requires enabled', () => {
+      // @ts-expect-error enabled is required
+      expect(() => resolveConfig({})).toThrow(/enabled is required/);
+    });
+
     it('rejects a blank host', () => {
-      expect(() => resolveConfig({ host: '   ' })).toThrow('host must not be blank');
+      expect(() => resolveConfig({ host: '   ', enabled: false })).toThrow(
+        'host must not be blank',
+      );
     });
 
     it('rejects ports outside 1..65535', () => {
-      expect(() => resolveConfig({ port: 0 })).toThrow('port must be in 1..65535');
-      expect(() => resolveConfig({ port: 70000 })).toThrow('port must be in 1..65535');
-      expect(() => resolveConfig({ port: 6625.5 })).toThrow('port must be in 1..65535');
+      expect(() => resolveConfig({ port: 0, enabled: false })).toThrow(
+        'port must be in 1..65535',
+      );
+      expect(() => resolveConfig({ port: 70000, enabled: false })).toThrow(
+        'port must be in 1..65535',
+      );
+      expect(() => resolveConfig({ port: 6625.5, enabled: false })).toThrow(
+        'port must be in 1..65535',
+      );
     });
 
     it('rejects non-positive probe timeouts', () => {
-      expect(() => resolveConfig({ probeTimeoutMs: 0 })).toThrow(
+      expect(() => resolveConfig({ probeTimeoutMs: 0, enabled: false })).toThrow(
         'probeTimeoutMs must be greater than 0',
       );
-      expect(() => resolveConfig({ probeTimeoutMs: -1 })).toThrow(
+      expect(() => resolveConfig({ probeTimeoutMs: -1, enabled: false })).toThrow(
         'probeTimeoutMs must be greater than 0',
       );
     });

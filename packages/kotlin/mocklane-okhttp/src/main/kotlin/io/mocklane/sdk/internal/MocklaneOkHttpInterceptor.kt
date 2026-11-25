@@ -8,7 +8,16 @@ import okhttp3.Interceptor
 import okhttp3.Request
 import okhttp3.Response
 
-/** OkHttp interceptor (SRP): rewrite absolute http(s) when gateway is reachable. */
+/**
+ * OkHttp application interceptor: rewrites absolute http(s) requests to the
+ * gateway when it is reachable.
+ *
+ * This must stay an application interceptor. OkHttp picks the connection from
+ * the URL as seen by `RetryAndFollowUpInterceptor`
+ * (`RealCall.enterNetworkInterceptorExchange`), which runs above
+ * `ConnectInterceptor`; a network interceptor cannot change the connection
+ * target. Cookie scoping happens in [MocklaneCookieInterceptor], per hop.
+ */
 internal class MocklaneOkHttpInterceptor(
     private val config: MocklaneConfig,
     private val probe: GatewayProbe,
@@ -37,7 +46,13 @@ internal class MocklaneOkHttpInterceptor(
         }
 
         val gateway = Rewrite.toGateway(uri, config.host, config.port)
-        val builder = original.newBuilder().url(gateway.toString())
+        val builder =
+            original
+                .newBuilder()
+                .url(gateway.toString())
+                // BridgeInterceptor only sets Host when it is absent; drop a
+                // caller-provided one so it describes the gateway URL.
+                .removeHeader("Host")
         DeviceHeaders.values(config.device).forEach { (name, value) ->
             builder.header(name, value)
         }

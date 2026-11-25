@@ -26,8 +26,8 @@ val moduleNames = mapOf(
 )
 val moduleDescriptions = mapOf(
     "mocklane-core" to "Shared core for Mocklane client adapters: config, rewrite, gateway probe, device metadata, and structured logging.",
-    "mocklane-okhttp" to "Debug-only OkHttp interceptor that routes traffic through the Mocklane Desktop gateway (127.0.0.1:6625).",
-    "mocklane-ktor" to "Debug-only Ktor client plugin that routes traffic through the Mocklane Desktop gateway (127.0.0.1:6625).",
+    "mocklane-okhttp" to "Debug-only OkHttp interceptor that routes traffic through the Mocklane app gateway (127.0.0.1:6625).",
+    "mocklane-ktor" to "Debug-only Ktor client plugin that routes traffic through the Mocklane app gateway (127.0.0.1:6625).",
 )
 
 subprojects {

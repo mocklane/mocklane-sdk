@@ -13,6 +13,9 @@ abstract class LoggerTransport {
     required LogLevel level,
     String? tag,
   });
+
+  /// Release resources owned by the transport.
+  void close() {}
 }
 
 class HttpLoggerTransport implements LoggerTransport {
@@ -62,6 +65,11 @@ class HttpLoggerTransport implements LoggerTransport {
       body: body,
     );
   }
+
+  @override
+  void close() {
+    _client.close();
+  }
 }
 
 class Logger {
@@ -76,6 +84,10 @@ class Logger {
     } catch (_) {
       // A transport that throws synchronously must not break the host app.
     }
+  }
+
+  void close() {
+    _transport.close();
   }
 }
 

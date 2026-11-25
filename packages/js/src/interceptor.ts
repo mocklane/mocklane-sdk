@@ -1,6 +1,6 @@
 /**
- * Interceptor (SRP): hook `fetch`, rewrite to gateway when reachable.
- * Depends on GatewayProbe abstraction (DIP); fail-open policy from config.
+ * Hooks `fetch` and rewrites requests to the gateway when it is reachable.
+ * Reachability comes from an injectable probe; fail-open policy from config.
  */
 
 import type { DeviceMetadata, MocklaneConfig } from './config.js';
@@ -29,6 +29,10 @@ export function installFetchInterceptor(deps: FetchInterceptorDeps): () => void 
   const { config, probe } = deps;
 
   const wrapped: typeof fetch = async (input, init) => {
+    if (!config.enabled) {
+      return original(input, init);
+    }
+
     const originalUrl = requestUrl(input);
     if (!shouldRewrite(originalUrl, config)) {
       return original(input, init);
@@ -48,6 +52,19 @@ export function installFetchInterceptor(deps: FetchInterceptorDeps): () => void 
       host: config.host,
       port: config.port,
     });
+
+    if (input instanceof Request) {
+      // `fetch(url, init)` would drop the Request's method, body and headers.
+      // Copy it onto the gateway URL instead, then let a caller-supplied
+      // `init` keep its documented override semantics.
+      const rewritten = new Request(gatewayUrl, input);
+      applyDeviceHeaders(rewritten.headers, config.device);
+      const nextInit = init?.headers
+        ? mergeDeviceHeaders(init, config.device)
+        : init;
+      return original(rewritten, nextInit);
+    }
+
     const nextInit = mergeDeviceHeaders(init, config.device);
     return original(gatewayUrl, nextInit);
   };
@@ -77,12 +94,11 @@ function shouldRewrite(url: string, config: MocklaneConfig): boolean {
   }
 }
 
-function mergeDeviceHeaders(
-  init: RequestInit | undefined,
+function applyDeviceHeaders(
+  headers: Headers,
   device: DeviceMetadata | undefined,
-): RequestInit | undefined {
-  if (!device) return init;
-  const headers = new Headers(init?.headers);
+): void {
+  if (!device) return;
   for (const [key, headerName] of Object.entries(DEVICE_HEADERS) as [
     keyof DeviceMetadata,
     string,
@@ -90,5 +106,14 @@ function mergeDeviceHeaders(
     const value = device[key];
     if (value) headers.set(headerName, value);
   }
+}
+
+function mergeDeviceHeaders(
+  init: RequestInit | undefined,
+  device: DeviceMetadata | undefined,
+): RequestInit | undefined {
+  if (!device) return init;
+  const headers = new Headers(init?.headers);
+  applyDeviceHeaders(headers, device);
   return { ...init, headers };
 }

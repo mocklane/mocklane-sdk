@@ -39,4 +39,26 @@ describe('rewriteToGateway', () => {
     expect(isGatewayUrl('http://127.0.0.1:6625/https://x/')).toBe(true);
     expect(isGatewayUrl('https://api.example.com/v1')).toBe(false);
   });
+
+  // `URL.port` is '' for a scheme's default port, so a gateway on :80 looked
+  // like an origin URL and every request was double-prefixed.
+  it('recognises a gateway on the scheme default port', () => {
+    const options = { host: '127.0.0.1', port: 80 };
+    expect(isGatewayUrl('http://127.0.0.1/x', options)).toBe(true);
+    expect(rewriteToGateway('http://127.0.0.1/x', options)).toBe(
+      'http://127.0.0.1/x',
+    );
+  });
+
+  it('matches IPv6 gateway hosts with or without brackets', () => {
+    expect(isGatewayUrl('http://[::1]:6625/x', { host: '::1' })).toBe(true);
+    expect(isGatewayUrl('http://[::1]:6625/x', { host: '[::1]' })).toBe(true);
+    expect(isGatewayUrl('http://[::1]:6625/x')).toBe(false);
+  });
+
+  it('drops credentials instead of sending them to the gateway', () => {
+    expect(
+      rewriteToGateway('https://user:pass@api.example.com/x'),
+    ).toBe('http://127.0.0.1:6625/https://api.example.com/x');
+  });
 });

@@ -1,7 +1,7 @@
 {
   "name": "mocklane-sdk-workspace",
   "private": true,
-  "description": "Mocklane client SDK monorepo — HTTP intercept → Desktop gateway :6625",
+  "description": "Mocklane client SDK monorepo — HTTP intercept → Mocklane app gateway :6625",
   "packageManager": "pnpm@9.15.0",
   "engines": {
     "node": ">=18"

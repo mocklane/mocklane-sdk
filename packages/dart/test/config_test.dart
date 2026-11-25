@@ -6,30 +6,40 @@ import 'package:test/test.dart';
 void main() {
   group('MocklaneConfig validation', () {
     test('accepts the defaults', () {
-      final config = MocklaneConfig();
+      final config = MocklaneConfig(enabled: false);
       expect(config.host, '127.0.0.1');
       expect(config.port, 6625);
       expect(config.failOpen, isTrue);
-      expect(config.enabled, isTrue);
+      // Opt-in: interception stays off unless the app asks for it.
+      expect(config.enabled, isFalse);
     });
 
     test('rejects a blank host', () {
-      expect(() => MocklaneConfig(host: '   '), throwsArgumentError);
+      expect(
+        () => MocklaneConfig(host: '   ', enabled: false),
+        throwsArgumentError,
+      );
     });
 
     test('rejects ports outside 1..65535', () {
-      expect(() => MocklaneConfig(port: 0), throwsRangeError);
-      expect(() => MocklaneConfig(port: 65536), throwsRangeError);
-      expect(() => MocklaneConfig(port: -1), throwsRangeError);
+      expect(() => MocklaneConfig(port: 0, enabled: false), throwsRangeError);
+      expect(
+        () => MocklaneConfig(port: 65536, enabled: false),
+        throwsRangeError,
+      );
+      expect(() => MocklaneConfig(port: -1, enabled: false), throwsRangeError);
     });
 
     test('rejects non-positive probe timeouts', () {
       expect(
-        () => MocklaneConfig(probeTimeout: Duration.zero),
+        () => MocklaneConfig(probeTimeout: Duration.zero, enabled: false),
         throwsArgumentError,
       );
       expect(
-        () => MocklaneConfig(probeTimeout: const Duration(milliseconds: -1)),
+        () => MocklaneConfig(
+          probeTimeout: const Duration(milliseconds: -1),
+          enabled: false,
+        ),
         throwsArgumentError,
       );
     });
@@ -71,7 +81,7 @@ void main() {
 
   group('MocklaneConfig withPlatformDefaults', () {
     test('fills a null device', () {
-      final config = MocklaneConfig().withPlatformDefaults();
+      final config = MocklaneConfig(enabled: false).withPlatformDefaults();
       expect(config.device, isNotNull);
       expect(config.device!.os, Platform.operatingSystem);
       expect(config.device!.deviceId, startsWith('${Platform.operatingSystem}:'));
@@ -79,8 +89,10 @@ void main() {
 
     test('fills only the missing fields', () {
       final config =
-          MocklaneConfig(device: const DeviceMetadata(deviceName: 'dart-app'))
-              .withPlatformDefaults();
+          MocklaneConfig(
+            device: const DeviceMetadata(deviceName: 'dart-app'),
+            enabled: false,
+          ).withPlatformDefaults();
       expect(config.device!.deviceName, 'dart-app');
       expect(config.device!.os, Platform.operatingSystem);
       expect(config.device!.deviceId, isNotNull);

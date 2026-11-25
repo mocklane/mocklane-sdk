@@ -2,10 +2,12 @@ import Foundation
 
 enum Masking {
     static let defaultHeaderKeys: Set<String> = [
-        "authorization", "cookie", "x-api-key", "proxy-authorization",
+        "authorization", "cookie", "set-cookie", "x-api-key", "x-auth-token",
+        "proxy-authorization",
     ]
     static let defaultJsonKeys: Set<String> = [
-        "password", "token", "access_token", "refresh_token", "secret", "api_key",
+        "password", "token", "access_token", "refresh_token", "id_token",
+        "secret", "client_secret", "api_key", "session", "session_id",
     ]
 
     static func maskHeaders(
@@ -46,13 +48,18 @@ enum Masking {
         return value
     }
 
+    /// Masks secrets inside a JSON-shaped message; returns `message` unchanged
+    /// when it is not valid JSON. Any JSON root is accepted — object, array,
+    /// or scalar.
     static func maskJSONString(_ message: String) -> String {
         guard let data = message.data(using: .utf8),
-              let json = try? JSONSerialization.jsonObject(with: data),
-              let masked = maskJSONValue(json) as? [String: Any],
+              let json = try? JSONSerialization.jsonObject(
+                  with: data,
+                  options: [.fragmentsAllowed]
+              ),
               let out = try? JSONSerialization.data(
-                  withJSONObject: masked,
-                  options: [.sortedKeys]
+                  withJSONObject: maskJSONValue(json),
+                  options: [.sortedKeys, .fragmentsAllowed]
               ),
               let str = String(data: out, encoding: .utf8)
         else {

@@ -8,6 +8,6 @@ xcodegen generate
 open MocklaneIOSSample.xcodeproj
 ```
 
-Physical device: USB + **Connect iOS** once. Smoke automation: launch with `-MocklaneSmoke` (runs **Run all**).
+On a physical device, you connect over USB and run **Connect iOS** once. For smoke automation, launch with `-MocklaneSmoke` (runs **Run all**).
 
 See [`../README.md`](../README.md).

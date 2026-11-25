@@ -1,5 +1,5 @@
 /**
- * Logger (SRP): structured console logs → reserved gateway path.
+ * Structured logs → reserved gateway path.
  * Never throws into the host app.
  */
 

@@ -1,6 +1,6 @@
 import Foundation
 
-/// Reachability probe (SRP + DIP).
+/// Reachability probe for the Desktop gateway.
 protocol GatewayProbe: Sendable {
     func isReachable() async -> Bool
 }

@@ -32,5 +32,26 @@ void main() {
       const already = 'http://127.0.0.1:6625/https://api.example.com/v1';
       expect(rewriteToGateway(already), already);
     });
+
+    test('keeps IPv6 brackets in the embedded origin', () {
+      expect(
+        rewriteToGateway('http://[::1]:8080/v1/me'),
+        'http://127.0.0.1:6625/http://[::1]:8080/v1/me',
+      );
+    });
+
+    test('drops userinfo from the embedded origin', () {
+      expect(
+        rewriteToGateway('https://user:pass@api.example.com/v1'),
+        'http://127.0.0.1:6625/https://api.example.com/v1',
+      );
+    });
+
+    test('treats a gateway URL on the scheme default port as a gateway URL',
+        () {
+      const already = 'http://127.0.0.1:80/https://api.example.com/v1';
+      expect(isGatewayUrl(already, port: 80), isTrue);
+      expect(rewriteToGateway(already, port: 80), already);
+    });
   });
 }

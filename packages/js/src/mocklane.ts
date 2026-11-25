@@ -1,29 +1,30 @@
 /**
- * Composition root (DIP): wires config → probe → interceptor → logger.
- * Single public façade for host apps.
+ * Public facade: wires config → probe → fetch interceptor → logger.
  */
 
-import { resolveConfig, type MocklaneStartOptions } from './config.js';
+import { resolveConfig, type MocklaneInstallOptions } from './config.js';
 import { installFetchInterceptor } from './interceptor.js';
 import { HttpLoggerTransport, Logger, type LogLevel } from './logger.js';
 import { HttpGatewayProbe } from './transport.js';
 
-let uninstall: (() => void) | undefined;
+let removeHook: (() => void) | undefined;
 let logger: Logger | undefined;
 
 export const Mocklane = {
   /**
    * Enable HTTP interception toward Mocklane Desktop.
    * Idempotent: calling again replaces the previous installation.
+   *
+   * `enabled` is required and has no default: pass your build flag. A disabled
+   * call is a no-op: it does not tear down an installation that is active.
    */
-  start(options: MocklaneStartOptions = {}): void {
+  install(options: MocklaneInstallOptions): void {
     const config = resolveConfig(options);
     if (!config.enabled) {
-      this.stop();
       return;
     }
 
-    this.stop();
+    this.uninstall();
 
     const probe = new HttpGatewayProbe({
       host: config.host,
@@ -31,7 +32,7 @@ export const Mocklane = {
       timeoutMs: config.probeTimeoutMs,
     });
 
-    uninstall = installFetchInterceptor({ config, probe });
+    removeHook = installFetchInterceptor({ config, probe });
     logger = new Logger(
       new HttpLoggerTransport({
         host: config.host,
@@ -41,10 +42,10 @@ export const Mocklane = {
     );
   },
 
-  /** Remove the fetch hook. Safe to call when not started. */
-  stop(): void {
-    uninstall?.();
-    uninstall = undefined;
+  /** Remove the fetch hook. Safe to call when not installed. */
+  uninstall(): void {
+    removeHook?.();
+    removeHook = undefined;
     logger = undefined;
   },
 
@@ -55,6 +56,6 @@ export const Mocklane = {
 
   /** Whether the interceptor is currently installed. */
   isActive(): boolean {
-    return uninstall !== undefined;
+    return removeHook !== undefined;
   },
 };

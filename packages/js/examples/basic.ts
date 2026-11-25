@@ -9,12 +9,13 @@
 
 import { Mocklane } from '../src/index.js';
 
-Mocklane.start({
+Mocklane.install({
+  enabled: true,
   device: {
     deviceId: 'example-device',
     deviceName: 'SDK example',
     os: 'node',
-    appVersion: '0.1.0',
+    appVersion: '0.1.1',
   },
 });
 
@@ -26,4 +27,4 @@ console.log(
   'note: with Desktop up, this request hits http://127.0.0.1:6625/https://httpbin.org/get',
 );
 
-Mocklane.stop();
+Mocklane.uninstall();

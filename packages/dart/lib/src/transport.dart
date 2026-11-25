@@ -2,9 +2,12 @@ import 'package:http/http.dart' as http;
 
 import 'config.dart';
 
-/// Reachability probe (SRP + DIP via injectable client).
+/// Reachability probe; the HTTP client is injectable for tests.
 abstract class GatewayProbe {
   Future<bool> isReachable();
+
+  /// Release resources owned by the probe. No-op for injected test probes.
+  void close() {}
 }
 
 class HttpGatewayProbe implements GatewayProbe {
@@ -39,14 +42,19 @@ class HttpGatewayProbe implements GatewayProbe {
       return false;
     }
   }
+
+  @override
+  void close() {
+    _client.close();
+  }
 }
 
-class AlwaysReachableProbe implements GatewayProbe {
+class AlwaysReachableProbe extends GatewayProbe {
   @override
   Future<bool> isReachable() async => true;
 }
 
-class NeverReachableProbe implements GatewayProbe {
+class NeverReachableProbe extends GatewayProbe {
   @override
   Future<bool> isReachable() async => false;
 }

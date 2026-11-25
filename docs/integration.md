@@ -1,35 +1,37 @@
-# Integrate the SDK
+# Integration overview
 
-Mocklane sits inside the HTTP stack your app already uses — add it alongside
-auth, logging, and other client layers rather than replacing the client.
+The Mocklane SDK attaches to the HTTP client your app already uses. It does not replace the client or change your data layer. It rewrites each absolute `http(s)` URL to a gateway URL, and the Mocklane app decides what happens to the request.
 
-```text
-Your app → Mocklane SDK → http://127.0.0.1:6625/<real-origin>/...
-                                  ↓
-                          Mocklane Desktop (Traffic)
-                                  ↓
-                             real API (or mock)
+```mermaid
+flowchart LR
+  app[Your app] <--> sdk[Mocklane SDK]
+  sdk <-->|local| ml[Mocklane app]
+  ml <-->|HTTPS| api[Real API or mock]
+  app <-->|disabled or unreachable| api
 ```
 
-## Prerequisites
+If the Mocklane app is not reachable, the request goes to its original URL (fail-open), so the app still works when the Mocklane app is not running.
 
-1. Run **Mocklane Desktop** and confirm the gateway is listening. The default
-   address is **`127.0.0.1:6625`**; if you use a different port, set it in the
-   SDK config (each platform guide shows how).
-2. Make requests with **absolute** `http(s)` URLs. Relative paths (`/v1/me`)
-   are not rewritten because there is no origin to embed.
-3. Install the SDK for your platform from the guide below.
+## Before you start
+
+1. Run the **Mocklane app** and confirm the gateway is listening. The default address is `127.0.0.1:6625`; each platform guide shows how to use another host or port.
+2. Send requests to **absolute** `http(s)` URLs. A relative path (`/v1/me`) has no origin to embed and is never rewritten.
+3. Pick your platform and follow its guide.
+
+Every SDK requires `enabled` explicitly, so interception stays off unless a debug build flag turns it on. A disabled SDK passes requests through unchanged.
 
 ## Choose your platform
 
+Each guide covers dependencies, a minimal integration, verification in the Mocklane app, device connectivity, configuration, and platform caveats.
+
 | Platform | HTTP client | Guide |
 |----------|-------------|-------|
-| JavaScript / TypeScript | `fetch` | [`integration/javascript.md`](integration/javascript.md) |
-| Dart / Flutter | Dio | [`integration/dart.md`](integration/dart.md) |
 | Kotlin / Android / JVM | OkHttp, Ktor | [`integration/kotlin.md`](integration/kotlin.md) |
 | Swift (iOS / macOS) | `URLSession` | [`integration/swift.md`](integration/swift.md) |
+| Dart / Flutter | Dio | [`integration/dart.md`](integration/dart.md) |
+| JavaScript / TypeScript | `fetch` | [`integration/javascript.md`](integration/javascript.md) |
 
-## What success looks like in Desktop
+## What success looks like
 
 | Action in the app | Traffic row | Mode |
 |-------------------|-------------|------|
@@ -41,37 +43,14 @@ Your app → Mocklane SDK → http://127.0.0.1:6625/<real-origin>/...
 
 | Symptom | Cause |
 |---------|-------|
-| No Traffic at all | Desktop is not listening on the configured port, or the SDK is not enabled |
-| Traffic empty but the API works | Fail-open: Desktop is down or unreachable → original URL used |
-| Relative URL never appears | Only absolute `http(s)://…` URLs are rewritten |
-| Phone works but no capture | The phone's `127.0.0.1` is not your Mac; use Connect Android / Connect iOS |
-| `SDK_LOG` missing | Desktop must support `POST /__mocklane/v1/log` |
+| No Traffic at all | The Mocklane app is not listening on the configured port, or the SDK is not enabled |
+| Traffic empty but the API works | Fail-open: the Mocklane app is down or unreachable, so the original URL was used |
+| A relative URL never appears | Only absolute `http(s)://…` URLs are rewritten |
+| Phone works but nothing is captured | The phone's `127.0.0.1` is not your computer; use Connect Android / Connect iOS |
+| `SDK_LOG` missing | The Mocklane app must support `POST /__mocklane/v1/log` |
 
-## Using a local checkout
+## Logging and privacy
 
-For SDK development, point your app at the package directory instead of a
-registry. Replace `<path-to-sdk>` with the repository checkout path.
+`Mocklane.log()` sends the message to the gateway, and the Mocklane app stores captured traffic. Request and response bodies are never redacted. Log messages are filtered on a best-effort basis by the JavaScript, Dart, and Swift SDKs. Only a valid JSON message is scanned, and only a fixed key list is replaced. The Kotlin SDK sends messages as-is. Each platform guide lists the exact keys.
 
-```bash
-# npm
-pnpm add mocklane-sdk@file:<path-to-sdk>/packages/js
-```
-
-```yaml
-# pubspec.yaml
-dependencies:
-  mocklane:
-    path: <path-to-sdk>/packages/dart
-```
-
-```kotlin
-// settings.gradle.kts
-include(":mocklane-core", ":mocklane-okhttp")
-project(":mocklane-core").projectDir = file("<path-to-sdk>/packages/kotlin/mocklane-core")
-project(":mocklane-okhttp").projectDir = file("<path-to-sdk>/packages/kotlin/mocklane-okhttp")
-```
-
-```swift
-// Package.swift
-.package(path: "<path-to-sdk>/packages/swift")
-```
+The gateway is plain HTTP without authentication. The `host` setting must stay on loopback (`127.0.0.1`); pointing it at a LAN address sends captured credentials to everyone on that network.

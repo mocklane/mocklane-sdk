@@ -1,4 +1,4 @@
-/** Immutable runtime options for the SDK (Config module — SRP). */
+/** Immutable runtime options for the SDK. */
 
 export const DEFAULT_GATEWAY_HOST = '127.0.0.1';
 export const DEFAULT_GATEWAY_PORT = 6625;
@@ -26,13 +26,14 @@ export interface MocklaneConfig {
   /** Device labels for the Traffic UI. Missing fields are filled from the platform. */
   device?: DeviceMetadata;
   /**
-   * When false, `start()` is a no-op (use for release builds).
-   * Default: true.
+   * When false, `install()` is a no-op (use for release builds).
+   * Required: there is no default.
    */
   enabled: boolean;
 }
 
-export type MocklaneStartOptions = Partial<MocklaneConfig>;
+export type MocklaneInstallOptions = Partial<Omit<MocklaneConfig, 'enabled'>> &
+  Pick<MocklaneConfig, 'enabled'>;
 
 /** Minimal `globalThis` surface used for platform detection (no DOM lib needed). */
 interface RuntimeScope {
@@ -95,7 +96,7 @@ function withPlatformDefaults(device?: DeviceMetadata): DeviceMetadata {
   };
 }
 
-/** Mirror Kotlin/Swift validation so a bad config fails at `start()`. */
+/** Mirror Kotlin/Swift validation so a bad config fails at `install()`. */
 function validate(host: string, port: number, probeTimeoutMs: number): void {
   if (host.trim() === '') {
     throw new Error('host must not be blank');
@@ -108,7 +109,10 @@ function validate(host: string, port: number, probeTimeoutMs: number): void {
   }
 }
 
-export function resolveConfig(options: MocklaneStartOptions = {}): MocklaneConfig {
+export function resolveConfig(options: MocklaneInstallOptions): MocklaneConfig {
+  if (typeof options?.enabled !== 'boolean') {
+    throw new Error('enabled is required: pass your build flag');
+  }
   const host = options.host ?? DEFAULT_GATEWAY_HOST;
   const port = options.port ?? DEFAULT_GATEWAY_PORT;
   const probeTimeoutMs = options.probeTimeoutMs ?? DEFAULT_PROBE_TIMEOUT_MS;
@@ -119,6 +123,6 @@ export function resolveConfig(options: MocklaneStartOptions = {}): MocklaneConfi
     failOpen: options.failOpen ?? true,
     probeTimeoutMs,
     device: withPlatformDefaults(options.device),
-    enabled: options.enabled ?? true,
+    enabled: options.enabled,
   };
 }

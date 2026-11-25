@@ -16,6 +16,10 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     environment: release
+    env:
+      # Optional. Trusted publishing needs no token; this is only used for
+      # the first publish of a package that does not exist on npm yet.
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
@@ -23,17 +27,23 @@ jobs:
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: "20"
-          registry-url: "https://registry.npmjs.org"
+          # Node 24 bundles an npm CLI that supports trusted publishing
+          # (npm 11.5.1+ is required).
+          node-version: "24"
           cache: "pnpm"
 
       - name: Install
         run: pnpm install --frozen-lockfile
 
+      # Trusted publishing authenticates through OIDC. The token is only for
+      # the first publish, before the package exists on npm; remove the
+      # NPM_TOKEN secret once the trusted publisher is validated.
+      - name: Authenticate with NPM_TOKEN
+        if: env.NPM_TOKEN != ''
+        run: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" >> "$HOME/.npmrc"
+
       - name: Build, test, and publish to npm
         working-directory: packages/js
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         # Unscoped packages are public, but npm refuses to attach a provenance
         # attestation to a *new* package unless the access level is explicit.
         run: npm publish --provenance --access public

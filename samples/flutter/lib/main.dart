@@ -5,7 +5,7 @@ import 'demo_runner.dart';
 import 'demo_scenarios.dart';
 
 void main() {
-  MocklaneBootstrap.start();
+  MocklaneBootstrap.install();
   runApp(const MocklaneSampleApp());
 }
 
@@ -75,7 +75,7 @@ class _SampleHomeState extends State<SampleHome> {
 
   @override
   void dispose() {
-    MocklaneBootstrap.stop();
+    MocklaneBootstrap.uninstall();
     super.dispose();
   }
 

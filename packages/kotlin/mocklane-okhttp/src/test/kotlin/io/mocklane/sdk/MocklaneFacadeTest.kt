@@ -2,10 +2,13 @@
 
 package io.mocklane.sdk
 
+import io.mocklane.sdk.internal.MocklaneCookieInterceptor
+import io.mocklane.sdk.internal.MocklaneOkHttpInterceptor
 import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -14,7 +17,7 @@ import okhttp3.mockwebserver.MockWebServer
 
 class MocklaneFacadeTest {
     @Test
-    fun interceptorUsesConfigForGatewayAndDevice() {
+    fun installUsesConfigForGatewayAndDevice() {
         val upstream = MockWebServer()
         upstream.enqueue(MockResponse().setBody("ok"))
         upstream.start()
@@ -33,10 +36,7 @@ class MocklaneFacadeTest {
                     device = DeviceMetadata(deviceName = "facade-test"),
                     enabled = true,
                 )
-            val client =
-                OkHttpClient.Builder()
-                    .addInterceptor(MocklaneOkHttp.interceptor(config))
-                    .build()
+            val client = MocklaneOkHttp.install(OkHttpClient(), config)
 
             val target = "http://${upstream.hostName}:${upstream.port}/v1/me"
             client.newCall(Request.Builder().url(target).build()).execute().use {
@@ -59,16 +59,13 @@ class MocklaneFacadeTest {
     }
 
     @Test
-    fun disabledBooleanInterceptorIsPassThrough() {
+    fun installDisabledBooleanIsPassThrough() {
         val upstream = MockWebServer()
         upstream.enqueue(MockResponse().setBody("direct"))
         upstream.start()
 
         try {
-            val client =
-                OkHttpClient.Builder()
-                    .addInterceptor(MocklaneOkHttp.interceptor(enabled = false))
-                    .build()
+            val client = MocklaneOkHttp.install(OkHttpClient(), enabled = false)
 
             val target = "http://${upstream.hostName}:${upstream.port}/v1/me"
             client.newCall(Request.Builder().url(target).build()).execute().use {
@@ -78,19 +75,20 @@ class MocklaneFacadeTest {
 
             val recorded = upstream.takeRequest()
             assertEquals("/v1/me", recorded.path)
-            assertEquals(null, recorded.getHeader("X-Mocklane-Device-Name"))
+            assertNull(recorded.getHeader("X-Mocklane-Device-Name"))
         } finally {
             upstream.shutdown()
         }
     }
 
     @Test
-    fun logUsesInterceptorConfig() {
+    fun logUsesInstalledConfig() {
         val gateway = MockWebServer()
         gateway.start()
 
         try {
-            MocklaneOkHttp.interceptor(
+            MocklaneOkHttp.install(
+                OkHttpClient(),
                 MocklaneConfig(
                     host = gateway.hostName,
                     port = gateway.port,
@@ -111,12 +109,13 @@ class MocklaneFacadeTest {
     }
 
     @Test
-    fun disabledInterceptorKeepsRuntimeOfEnabledAdapter() {
+    fun disabledInstallKeepsRuntimeOfEnabledAdapter() {
         val gateway = MockWebServer()
         gateway.start()
 
         try {
-            MocklaneOkHttp.interceptor(
+            MocklaneOkHttp.install(
+                OkHttpClient(),
                 MocklaneConfig(
                     host = gateway.hostName,
                     port = gateway.port,
@@ -124,7 +123,7 @@ class MocklaneFacadeTest {
                     enabled = true,
                 ),
             )
-            MocklaneOkHttp.interceptor(MocklaneConfig(enabled = false))
+            MocklaneOkHttp.install(OkHttpClient(), MocklaneConfig(enabled = false))
             Mocklane.log("still bound", tag = "facade")
 
             val recorded = assertNotNull(gateway.takeRequest(5, TimeUnit.SECONDS))
@@ -150,10 +149,7 @@ class MocklaneFacadeTest {
                     failOpen = false,
                     enabled = false,
                 )
-            val client =
-                OkHttpClient.Builder()
-                    .addInterceptor(MocklaneOkHttp.interceptor(config))
-                    .build()
+            val client = MocklaneOkHttp.install(OkHttpClient(), config)
 
             val target = "http://${upstream.hostName}:${upstream.port}/v1/me"
             client.newCall(Request.Builder().url(target).build()).execute().use {
@@ -163,9 +159,26 @@ class MocklaneFacadeTest {
 
             val recorded = upstream.takeRequest()
             assertEquals("/v1/me", recorded.path)
-            assertEquals(null, recorded.getHeader("X-Mocklane-Device-Name"))
+            assertNull(recorded.getHeader("X-Mocklane-Device-Name"))
         } finally {
             upstream.shutdown()
+        }
+    }
+
+    @Test
+    fun installIsIdempotent() {
+        val client = OkHttpClient()
+        val installed =
+            MocklaneOkHttp.install(
+                client,
+                MocklaneConfig(host = "127.0.0.1", port = 1, enabled = false),
+            )
+        val twice = MocklaneOkHttp.install(installed, MocklaneConfig(enabled = true))
+        try {
+            assertEquals(1, twice.interceptors.count { it is MocklaneOkHttpInterceptor })
+            assertEquals(1, twice.networkInterceptors.count { it is MocklaneCookieInterceptor })
+        } finally {
+            Mocklane.reset()
         }
     }
 }

@@ -152,7 +152,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 0.1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = io.mocklane.sample.ios;
 				PRODUCT_NAME = MocklaneIOSSample;
 				SDKROOT = iphoneos;
@@ -236,7 +236,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 0.1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = io.mocklane.sample.ios;
 				PRODUCT_NAME = MocklaneIOSSample;
 				SDKROOT = iphoneos;

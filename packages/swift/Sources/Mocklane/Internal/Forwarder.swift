@@ -14,13 +14,25 @@ final class Forwarder: NSObject, URLSessionDataDelegate, @unchecked Sendable {
         /// relative `Location` headers stay attached to the original origin,
         /// not to the gateway (which only ever sees rewritten URLs).
         var originalURL: URL
+        /// `Authorization` from the app's request. URLSession strips it from a
+        /// redirect whenever the task URL and the redirect target differ, and
+        /// every captured hop does: the task talks to the gateway, the target
+        /// names the origin. Re-attach it on same-origin hops, and forget it
+        /// after a real cross-origin hop.
+        var authorization: String?
         /// `false` on the fail-open path: the request goes straight to the
         /// origin, so redirect targets must not be rewritten to the gateway.
         let proxied: Bool
 
-        init(owner: MocklaneURLProtocol, originalURL: URL, proxied: Bool) {
+        init(
+            owner: MocklaneURLProtocol,
+            originalURL: URL,
+            authorization: String?,
+            proxied: Bool
+        ) {
             self.owner = owner
             self.originalURL = originalURL
+            self.authorization = authorization
             self.proxied = proxied
         }
     }
@@ -64,6 +76,7 @@ final class Forwarder: NSObject, URLSessionDataDelegate, @unchecked Sendable {
         entries[task.taskIdentifier] = Entry(
             owner: owner,
             originalURL: originalURL,
+            authorization: request.value(forHTTPHeaderField: "Authorization"),
             proxied: proxied
         )
         lock.unlock()
@@ -141,9 +154,19 @@ final class Forwarder: NSObject, URLSessionDataDelegate, @unchecked Sendable {
         // instead, then bring the hop back through the gateway so it is
         // captured and keeps the origin-prefixed form.
         var next = request
-        if let location = response.value(forHTTPHeaderField: "Location"),
-           let resolved = URL(string: location, relativeTo: entry.originalURL)?.absoluteURL {
-            next.url = resolved
+        if let location = response.value(forHTTPHeaderField: "Location") {
+            // Desktop rewrites same-origin `Location` values (absolute or
+            // relative) to the gateway form. Unwrap the prefix so the
+            // same-origin check below sees the real origin and keeps
+            // `Authorization`/`Cookie` on the hop.
+            let target = MocklaneRewrite.originalURL(
+                from: location,
+                host: config.host,
+                port: config.port
+            ) ?? location
+            if let resolved = URL(string: target, relativeTo: entry.originalURL)?.absoluteURL {
+                next.url = resolved
+            }
         }
         if let url = next.url, isWebURL(url) {
             // Every hop goes through the same gateway, so URLSession cannot
@@ -152,6 +175,18 @@ final class Forwarder: NSObject, URLSessionDataDelegate, @unchecked Sendable {
             if !sameOrigin(url, entry.originalURL) {
                 next.setValue(nil, forHTTPHeaderField: "Authorization")
                 next.setValue(nil, forHTTPHeaderField: "Cookie")
+                lock.lock()
+                entry.authorization = nil
+                lock.unlock()
+            } else if next.value(forHTTPHeaderField: "Authorization") == nil {
+                // Same-origin hop: URLSession dropped the header because the
+                // task URL (gateway) and the redirect target (origin) differ.
+                lock.lock()
+                let authorization = entry.authorization
+                lock.unlock()
+                if let authorization {
+                    next.setValue(authorization, forHTTPHeaderField: "Authorization")
+                }
             }
             if next.value(forHTTPHeaderField: "Cookie") == nil,
                let cookie = cookieHeader(for: url) {
@@ -207,28 +242,30 @@ final class Forwarder: NSObject, URLSessionDataDelegate, @unchecked Sendable {
               let http = response as? HTTPURLResponse
         else { return }
 
-        var header: String?
+        var values: [String] = []
         for (key, value) in http.allHeaderFields {
             guard let name = key as? String,
                   name.caseInsensitiveCompare("Set-Cookie") == .orderedSame
             else { continue }
-            let joined: String?
-            if let values = value as? [String] {
-                joined = values.joined(separator: ", ")
-            } else {
-                joined = value as? String
+            if let list = value as? [String] {
+                values.append(contentsOf: list)
+            } else if let string = value as? String {
+                values.append(string)
             }
-            guard let joined else { continue }
-            header = header.map { $0 + ", " + joined } ?? joined
         }
-        guard let header else { return }
 
-        let cookies = HTTPCookie.cookies(
-            withResponseHeaderFields: ["Set-Cookie": header],
-            for: url
-        )
-        for cookie in cookies {
-            cookieStorage.setCookie(cookie)
+        // Parse each header value on its own: joining them with `, ` splits
+        // `Expires=Wed, 21 Oct 2015 …` into two cookies. If the platform has
+        // already merged duplicate headers, the `Expires` comma stays
+        // ambiguous and parsing is best-effort.
+        for value in values {
+            let cookies = HTTPCookie.cookies(
+                withResponseHeaderFields: ["Set-Cookie": value],
+                for: url
+            )
+            for cookie in cookies {
+                cookieStorage.setCookie(cookie)
+            }
         }
     }
 }

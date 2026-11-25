@@ -15,6 +15,37 @@ describe('masking', () => {
     });
   });
 
+  it('redacts the expanded default key set', () => {
+    expect(
+      maskHeaders({
+        'X-Auth-Token': 't',
+        'Set-Cookie': 'sid=1',
+        Session: 's',
+        'X-Trace': 'keep',
+      }),
+    ).toEqual({
+      'X-Auth-Token': '[REDACTED]',
+      'Set-Cookie': '[REDACTED]',
+      Session: '[REDACTED]',
+      'X-Trace': 'keep',
+    });
+    expect(
+      maskJsonValue({
+        session: 's',
+        session_id: 's1',
+        id_token: 'i',
+        client_secret: 'c',
+        ok: true,
+      }),
+    ).toEqual({
+      session: '[REDACTED]',
+      session_id: '[REDACTED]',
+      id_token: '[REDACTED]',
+      client_secret: '[REDACTED]',
+      ok: true,
+    });
+  });
+
   it('redacts nested JSON keys', () => {
     expect(
       maskJsonValue({

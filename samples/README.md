@@ -1,7 +1,6 @@
 # Samples
 
-Runnable reference apps that integrate the SDK packages. Every sample runs the
-same scenario catalog from [`scenarios.json`](scenarios.json).
+Runnable reference apps that integrate the SDK packages. Every sample runs the same scenario catalog from [`scenarios.json`](scenarios.json).
 
 | Sample | Stack | Integration entry point | How to run |
 |--------|-------|-------------------------|------------|
@@ -13,9 +12,8 @@ same scenario catalog from [`scenarios.json`](scenarios.json).
 
 ## Prerequisites
 
-1. Mocklane Desktop running — status **Listening :6625**, Traffic open.
-2. Internet access (samples call `postman-echo.com` and
-   `jsonplaceholder.typicode.com`).
+1. Mocklane app running — status **Listening :6625**, Traffic open.
+2. Internet access (samples call `postman-echo.com` and `jsonplaceholder.typicode.com`).
 3. `pnpm install` at the repository root.
 
 ## Scenario catalog
@@ -51,9 +49,7 @@ samples/scenarios.json
               └─► swift-cli/Sources/DemoScenarios.swift
 ```
 
-Do not hand-edit the generated `DemoScenarios.*` files. Edit
-[`scenarios.json`](scenarios.json), run `pnpm generate:samples`, and commit the
-regenerated files.
+The generated `DemoScenarios.*` files are not edited by hand. If you edit [`scenarios.json`](scenarios.json), regenerate with `pnpm generate:samples` and commit the regenerated files.
 
 ## UI
 
@@ -65,7 +61,7 @@ Every GUI sample provides:
 
 ## Expected Traffic (Run all)
 
-| Scenario | Desktop row |
+| Scenario | Mocklane app row |
 |----------|-------------|
 | S01–S12 | `FORWARD` with matching method + path suffix |
 | L01, L02 | `SDK_LOG` `POST /__mocklane/v1/log` |
@@ -81,12 +77,11 @@ Every GUI sample provides:
 ## E2E (web Run all)
 
 ```bash
-# Terminal A: Mocklane Desktop, or `mocklane serve`
+# Terminal A: Mocklane app, or `mocklane serve`
 # Terminal B:
 pnpm install && pnpm --filter mocklane-sdk build && pnpm --filter mocklane-web-demo dev
 # Terminal C:
 MOCKLANE_BIN=/path/to/mocklane pnpm e2e:web-demo
 ```
 
-See [`docs/testing.md`](../docs/testing.md) and
-[`docs/integration.md`](../docs/integration.md).
+See [`docs/testing.md`](../docs/testing.md) and [`docs/integration.md`](../docs/integration.md).

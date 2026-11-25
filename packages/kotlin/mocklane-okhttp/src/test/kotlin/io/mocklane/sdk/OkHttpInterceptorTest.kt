@@ -3,10 +3,11 @@
 package io.mocklane.sdk
 
 import io.mocklane.sdk.internal.AlwaysReachableProbe
-import io.mocklane.sdk.internal.MocklaneOkHttpInterceptor
+import io.mocklane.sdk.internal.GatewayProbe
 import io.mocklane.sdk.internal.NeverReachableProbe
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -15,6 +16,9 @@ import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 
 class OkHttpInterceptorTest {
+    private fun client(config: MocklaneConfig, probe: GatewayProbe): OkHttpClient =
+        MocklaneOkHttp.installWithProbe(OkHttpClient(), config, probe)
+
     @Test
     fun rewritesWhenGatewayReachable() {
         val upstream = MockWebServer()
@@ -34,10 +38,7 @@ class OkHttpInterceptorTest {
                 device = DeviceMetadata(deviceName = "kotlin-test"),
                 enabled = true,
             )
-        val client =
-            OkHttpClient.Builder()
-                .addInterceptor(MocklaneOkHttpInterceptor(config, AlwaysReachableProbe))
-                .build()
+        val client = client(config, AlwaysReachableProbe)
 
         val target = "http://${upstream.hostName}:${upstream.port}/v1/me"
         val response = client.newCall(Request.Builder().url(target).build()).execute()
@@ -48,6 +49,7 @@ class OkHttpInterceptorTest {
             "/http://${upstream.hostName}:${upstream.port}/v1/me",
             recorded.path,
         )
+        assertEquals("${gateway.hostName}:${gateway.port}", recorded.getHeader("Host"))
         assertEquals("kotlin-test", recorded.getHeader("X-Mocklane-Device-Name"))
 
         upstream.shutdown()
@@ -67,10 +69,7 @@ class OkHttpInterceptorTest {
                 failOpen = true,
                 enabled = true,
             )
-        val client =
-            OkHttpClient.Builder()
-                .addInterceptor(MocklaneOkHttpInterceptor(config, NeverReachableProbe))
-                .build()
+        val client = client(config, NeverReachableProbe)
 
         val target = "http://${upstream.hostName}:${upstream.port}/v1/me"
         val response = client.newCall(Request.Builder().url(target).build()).execute()
@@ -94,10 +93,7 @@ class OkHttpInterceptorTest {
                 failOpen = false,
                 enabled = false,
             )
-        val client =
-            OkHttpClient.Builder()
-                .addInterceptor(MocklaneOkHttpInterceptor(config, NeverReachableProbe))
-                .build()
+        val client = client(config, NeverReachableProbe)
 
         val target = "http://${upstream.hostName}:${upstream.port}/v1/me"
         val response = client.newCall(Request.Builder().url(target).build()).execute()
@@ -108,13 +104,13 @@ class OkHttpInterceptorTest {
 
         val recorded = upstream.takeRequest()
         assertEquals("/v1/me", recorded.path)
-        assertEquals(null, recorded.getHeader("X-Mocklane-Device-Name"))
+        assertNull(recorded.getHeader("X-Mocklane-Device-Name"))
 
         upstream.shutdown()
     }
 
     @Test
-    fun skipsWebSocketHandshakeWhenGatewayIsDown() {
+    fun skipsWebSocketHandshake() {
         val upstream = MockWebServer()
         upstream.enqueue(MockResponse().setBody("handshake"))
         upstream.start()
@@ -126,10 +122,7 @@ class OkHttpInterceptorTest {
                 failOpen = false,
                 enabled = true,
             )
-        val client =
-            OkHttpClient.Builder()
-                .addInterceptor(MocklaneOkHttpInterceptor(config, NeverReachableProbe))
-                .build()
+        val client = client(config, NeverReachableProbe)
 
         val target = "http://${upstream.hostName}:${upstream.port}/socket"
         val request =
@@ -147,13 +140,13 @@ class OkHttpInterceptorTest {
 
         val recorded = upstream.takeRequest()
         assertEquals("/socket", recorded.path)
-        assertEquals(null, recorded.getHeader("X-Mocklane-Device-Name"))
+        assertNull(recorded.getHeader("X-Mocklane-Device-Name"))
 
         upstream.shutdown()
     }
 
     @Test
-    fun skipsGrpcWhenGatewayIsDown() {
+    fun skipsGrpc() {
         val upstream = MockWebServer()
         upstream.enqueue(MockResponse().setBody("grpc"))
         upstream.start()
@@ -165,10 +158,7 @@ class OkHttpInterceptorTest {
                 failOpen = false,
                 enabled = true,
             )
-        val client =
-            OkHttpClient.Builder()
-                .addInterceptor(MocklaneOkHttpInterceptor(config, NeverReachableProbe))
-                .build()
+        val client = client(config, NeverReachableProbe)
 
         val target = "http://${upstream.hostName}:${upstream.port}/pkg.Service/Method"
         val body = byteArrayOf(0, 0, 0, 0, 0).toRequestBody("application/grpc+proto".toMediaType())
@@ -181,7 +171,7 @@ class OkHttpInterceptorTest {
         val recorded = upstream.takeRequest()
         assertEquals("/pkg.Service/Method", recorded.path)
         assertEquals("application/grpc+proto", recorded.getHeader("Content-Type"))
-        assertEquals(null, recorded.getHeader("X-Mocklane-Device-Name"))
+        assertNull(recorded.getHeader("X-Mocklane-Device-Name"))
 
         upstream.shutdown()
     }
@@ -204,10 +194,7 @@ class OkHttpInterceptorTest {
                 device = DeviceMetadata(deviceName = "kotlin-test"),
                 enabled = true,
             )
-        val client =
-            OkHttpClient.Builder()
-                .addInterceptor(MocklaneOkHttpInterceptor(config, AlwaysReachableProbe))
-                .build()
+        val client = client(config, AlwaysReachableProbe)
 
         val target = "http://${upstream.hostName}:${upstream.port}/v1/items"
         val body = """{"name":"one"}""".toRequestBody("application/json".toMediaType())
@@ -223,6 +210,89 @@ class OkHttpInterceptorTest {
             recorded.path,
         )
         assertEquals("kotlin-test", recorded.getHeader("X-Mocklane-Device-Name"))
+
+        upstream.shutdown()
+        gateway.shutdown()
+    }
+
+    @Test
+    fun followsGatewayPrefixedRedirectWithCredentials() {
+        // Desktop rewrites same-origin `Location` values to the gateway form,
+        // so both hops point at the gateway. OkHttp must follow the second hop
+        // through the gateway without double-prefixing it, and keep the
+        // caller's Authorization header (the host never changes).
+        val gateway = MockWebServer()
+        gateway.start()
+        gateway.enqueue(
+            MockResponse()
+                .setResponseCode(302)
+                .setHeader(
+                    "Location",
+                    "http://${gateway.hostName}:${gateway.port}/http://origin.test/final",
+                ),
+        )
+        gateway.enqueue(MockResponse().setBody("gw"))
+
+        val config =
+            MocklaneConfig(
+                host = gateway.hostName,
+                port = gateway.port,
+                failOpen = false,
+                enabled = true,
+            )
+        val client = client(config, AlwaysReachableProbe)
+
+        val request =
+            Request.Builder()
+                .url("http://origin.test/start")
+                .header("Authorization", "Bearer t")
+                .build()
+        client.newCall(request).execute().use { response ->
+            assertEquals(200, response.code)
+            assertEquals("gw", response.body?.string())
+        }
+
+        val first = gateway.takeRequest()
+        assertEquals("/http://origin.test/start", first.path)
+        assertEquals("Bearer t", first.getHeader("Authorization"))
+
+        val second = gateway.takeRequest()
+        assertEquals("/http://origin.test/final", second.path)
+        assertEquals("Bearer t", second.getHeader("Authorization"))
+
+        gateway.shutdown()
+    }
+
+    @Test
+    fun usesTheCallersCookieHeader() {
+        val upstream = MockWebServer()
+        upstream.enqueue(MockResponse().setBody("ok"))
+        upstream.start()
+
+        val gateway = MockWebServer()
+        gateway.enqueue(MockResponse().setBody("gw"))
+        gateway.start()
+
+        val config =
+            MocklaneConfig(
+                host = gateway.hostName,
+                port = gateway.port,
+                failOpen = false,
+                enabled = true,
+            )
+        val client = client(config, AlwaysReachableProbe)
+
+        val target = "http://${upstream.hostName}:${upstream.port}/v1/me"
+        val request =
+            Request.Builder()
+                .url(target)
+                .header("Cookie", "app=1")
+                .build()
+        client.newCall(request).execute().use { response ->
+            assertEquals(200, response.code)
+        }
+
+        assertEquals("app=1", gateway.takeRequest().getHeader("Cookie"))
 
         upstream.shutdown()
         gateway.shutdown()
